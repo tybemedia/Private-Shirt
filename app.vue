@@ -11,7 +11,10 @@
     <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
       <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
         <div class="text-2xl font-bold text-gray-900 cursor-pointer" @click="currentPage = 'Home'">
-          <img src="/assets/group-25.svg" alt="private-shirt.de Logo" class="h-8">
+          <img src="/assets/group-25.svg" 
+               alt="private-shirt.de Logo" 
+               class="h-8"
+               @error="handleLogoError">
         </div>
         <div class="hidden lg:flex items-center space-x-8">
           <a @click="currentPage = 'ReadyToBuy'" class="nav-link">Fertige Produkte</a>
@@ -21,6 +24,17 @@
         </div>
         <div>
           <button @click="currentPage = 'Grossbestellung'" class="btn btn-secondary hidden sm:inline-block">Großbestellung</button>
+          <!-- Cart Icon -->
+          <button @click="isCartOpen = !isCartOpen" class="relative ml-4 p-2 rounded-full hover:bg-gray-100 transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span v-if="cartItemCount > 0" 
+                  class="absolute -top-1 -right-1 bg-[#D8127D] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              {{ cartItemCount }}
+            </span>
+          </button>
+
           <button class="lg:hidden ml-4">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
           </button>
@@ -90,12 +104,21 @@
                 <template v-if="!isLoading">
                   <div v-for="product in filteredReadyToBuyProducts" 
                        :key="product.id" 
-                       class="bg-white rounded-lg shadow-md overflow-hidden group"
-                       @click="currentPage = 'ProductDetail'; selectedProduct = product">
+                       class="bg-white rounded-lg shadow-md overflow-hidden group">
                     <div class="relative">
-                      <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover">
+                      <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
+                           @error="handleImageError($event, product.category)">
                       <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button class="btn bg-white text-gray-900">Details anzeigen</button>
+                        <div class="flex flex-col gap-2">
+                          <button @click.stop="currentPage = 'ProductDetail'; selectedProduct = product" 
+                                  class="btn bg-white text-gray-900">
+                            Details anzeigen
+                          </button>
+                          <button @click.stop="addToCart(product)" 
+                                  class="btn bg-[#D8127D] text-white">
+                            In den Warenkorb
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <div class="p-4">
@@ -161,7 +184,8 @@
                      class="bg-white rounded-lg shadow-md overflow-hidden group"
                      @click="currentPage = 'ProductDetail'; selectedProduct = product">
                   <div class="relative">
-                    <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover">
+                    <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
+                         @error="handleImageError($event, product.category)">
                     <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <button class="btn bg-[#D8127D] text-white">Jetzt gestalten</button>
                     </div>
@@ -202,6 +226,7 @@
                   loop 
                   muted 
                   playsinline
+                  @error="handleVideoError"
                 >
                   <source src="https://videos.pexels.com/video-files/7567992/7567992-hd_1920_1080_25fps.mp4" type="video/mp4">
                 </video>
@@ -214,7 +239,10 @@
                 <h2 class="text-3xl font-bold text-center mb-8">Entdecke unsere Bestseller</h2>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
                   <div v-for="category in categories" :key="category.name" class="category-tile group" @click="currentPage = category.page">
-                    <img :src="category.image" :alt="`[Bild von ${category.name}]`" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110">
+                    <img :src="category.image" 
+                         :alt="`[Bild von ${category.name}]`" 
+                         class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                         @error="handleImageError($event, category.name.toLowerCase())">
                     <div class="absolute inset-0 bg-black/30"></div>
                     <span class="absolute bottom-4 left-4 text-white text-xl font-semibold">{{ category.name }}</span>
                   </div>
@@ -295,7 +323,8 @@
                   <div class="relative aspect-square rounded-lg overflow-hidden">
                     <img :src="selectedProduct.image" 
                          :alt="selectedProduct.name" 
-                         class="w-full h-full object-cover">
+                         class="w-full h-full object-cover"
+                         @error="handleImageError($event, selectedProduct.category)">
                     <div v-if="selectedProduct.customizable" 
                          class="absolute top-4 left-4 bg-[#D8127D] text-white px-3 py-1 rounded-full text-sm">
                       Individuell gestaltbar
@@ -309,7 +338,8 @@
                             :class="selectedImage === image ? 'border-[#D8127D]' : 'border-transparent'">
                       <img :src="image" 
                            :alt="`${selectedProduct.name} - Bild ${index + 1}`"
-                           class="w-full h-full object-cover">
+                           class="w-full h-full object-cover"
+                           @error="handleImageError($event, selectedProduct.category)">
                     </button>
                   </div>
                 </div>
@@ -389,6 +419,7 @@
                         Jetzt gestalten
                       </button>
                       <button v-else 
+                              @click="addToCart(selectedProduct, quantity)"
                               class="btn bg-[#D8127D] text-white flex-1 hover:bg-[#b30f68]">
                         In den Warenkorb
                       </button>
@@ -516,6 +547,61 @@
               </div>
             </div>
           </div>
+
+          <!-- Store Locations Section -->
+          <section class="py-16 sm:py-24 bg-gray-50">
+            <div class="container mx-auto px-6 text-center">
+              <!-- New Pin Needle SVG -->
+              <div class="mb-8">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="mx-auto text-[#FFC72C]">
+                  <path d="M40 0C21.2 0 6 15.2 6 34C6 58 40 80 40 80C40 80 74 58 74 34C74 15.2 58.8 0 40 0ZM40 46C33.488 46 28 40.512 28 34C28 27.488 33.488 22 40 22C46.512 22 52 27.488 52 34C52 40.512 46.512 46 40 46Z" fill="currentColor"/>
+                </svg>
+              </div>
+
+              <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-12 relative inline-block leading-tight">
+                Zuhause, wo du es bist
+                <span class="block absolute -bottom-3 left-0 w-full h-2 bg-[#D8127D] transform skew-x-12 opacity-75"></span>
+              </h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+                <!-- Europa Passage Store -->
+                <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200 text-left">
+                  <img src="./assets/20210421_001_Private_Shirt_Hamburg.webp" 
+                       alt="Europa Passage Storefront" 
+                       class="w-full h-48 object-cover rounded-lg mb-6 shadow-sm">
+                  <h3 class="text-2xl font-bold text-[#D8127D] mb-4">Europa Passage</h3>
+                  <p class="text-lg font-medium text-gray-800 mb-2">Private Shirt Europa Passage</p>
+                  <p class="text-gray-600 mb-4">
+                    <a href="https://maps.google.com/?q=Ballindamm 40, 20095 Hamburg" target="_blank" class="text-[#D8127D] hover:underline">
+                      Ballindamm 40, 20095 Hamburg
+                    </a>
+                  </p>
+                  
+                  <p class="text-gray-700 mb-2"><span class="font-semibold">Tel:</span> <a href="tel:+494032873804" class="text-[#D8127D] hover:underline">040 328 738 04</a></p>
+                  <p class="text-gray-700 mb-2"><span class="font-semibold">Fax:</span> 040 328 738 15</p>
+                  <p class="text-gray-700"><span class="font-semibold">E-Mail:</span> <a href="mailto:europa-passage@private-shirt.de" class="text-[#D8127D] hover:underline">europa-passage@private-shirt.de</a></p>
+                </div>
+
+                <!-- Altona Store -->
+                <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200 text-left">
+                  <img src="./assets/20201123_193242.webp" 
+                       alt="Altona Storefront" 
+                       class="w-full h-48 object-cover rounded-lg mb-6 shadow-sm">
+                  <h3 class="text-2xl font-bold text-[#D8127D] mb-4">Altona</h3>
+                  <p class="text-lg font-medium text-gray-800 mb-2">EKZ Mercado</p>
+                  <p class="text-lg font-medium text-gray-800 mb-2">Private Shirt Altona</p>
+                  <p class="text-gray-600 mb-4">
+                    <a href="https://maps.google.com/?q=Ottenser Hauptstraße 10, 22765 Hamburg" target="_blank" class="text-[#D8127D] hover:underline">
+                      Ottenser Hauptstraße 10, 22765 Hamburg
+                    </a>
+                  </p>
+                  
+                  <p class="text-gray-700 mb-2"><span class="font-semibold">Tel:</span> <a href="tel:+494039907778" class="text-[#D8127D] hover:underline">040 399 077 78</a></p>
+                  <p class="text-gray-700 mb-2"><span class="font-semibold">Fax:</span> 040 399 081 16</p>
+                  <p class="text-gray-700"><span class="font-semibold">E-Mail:</span> <a href="mailto:altona@private-shirt.de" class="text-[#D8127D] hover:underline">altona@private-shirt.de</a></p>
+                </div>
+              </div>
+            </div>
+          </section>
 
           <!-- GROSSBESTELLUNG PAGE (/pages/grossbestellung.vue) -->
           <div v-if="currentPage === 'Grossbestellung'">
@@ -695,7 +781,7 @@
           </div>
 
           <!-- Enhanced Cart Sidebar -->
-          <div v-if="isCartOpen" class="fixed inset-0 bg-black/50 z-50">
+          <div v-if="isCartOpen" class="fixed inset-0 bg-black/50 z-50" @click.self="isCartOpen = false">
             <div class="absolute right-0 top-0 h-full w-full md:w-96 bg-white shadow-xl">
               <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -723,22 +809,31 @@
                 <!-- Cart Items -->
                 <div v-if="activeCartTab === 'Warenkorb' && cart.length > 0" class="space-y-4">
                   <div v-for="(item, index) in cart" :key="index" class="flex gap-4 pb-4 border-b">
-                    <img :src="item.image" :alt="item.name" class="w-20 h-20 object-cover rounded">
+                    <img :src="item.image" 
+                         :alt="item.name" 
+                         class="w-20 h-20 object-cover rounded"
+                         @error="handleImageError($event, item.category)">
                     <div class="flex-1">
                       <h3 class="font-semibold">{{ item.name }}</h3>
-                      <p class="text-sm text-gray-500">
-                        {{ item.selectedSize }} / {{ item.selectedColor }}
+                      <p v-if="item.selectedColor || item.selectedSize" class="text-sm text-gray-500">
+                        <span v-if="item.selectedColor">Farbe: <span class="capitalize">{{ item.selectedColor }}</span></span>
+                        <span v-if="item.selectedColor && item.selectedSize"> / </span>
+                        <span v-if="item.selectedSize">Größe: {{ item.selectedSize }}</span>
                       </p>
                       <div class="flex justify-between items-center mt-2">
-                        <div class="text-[#D8127D] font-bold">
-                          {{ item.price }} €
+                        <div class="flex items-center border rounded-lg px-2 py-1">
+                          <button @click="updateCartItemQuantity(index, item.quantity - 1)" class="p-1 text-gray-600 hover:text-gray-900">-</button>
+                          <input type="number" v-model.number="item.quantity" @change="updateCartItemQuantity(index, item.quantity)" min="1" class="w-10 text-center text-sm border-x mx-2 focus:outline-none focus:ring-0">
+                          <button @click="updateCartItemQuantity(index, item.quantity + 1)" class="p-1 text-gray-600 hover:text-gray-900">+</button>
                         </div>
-                        <button 
-                          @click="removeFromCart(index)"
-                          class="text-[#D8127D] hover:text-[#b30f68]"
-                        >
-                          Entfernen
-                        </button>
+                        <div class="font-bold">
+                          {{ (parseFloat(item.price) * item.quantity).toFixed(2) }} €
+                        </div>
+                      </div>
+                      <div class="flex justify-end text-sm mt-2">
+                        <button @click="moveToSavedForLater(index)" class="text-gray-500 hover:text-gray-700 mr-4">Bearbeiten</button>
+                        <button @click="moveToSavedForLater(index)" class="text-gray-500 hover:text-gray-700 mr-4">Kopieren</button>
+                        <button @click="removeFromCart(index)" class="text-gray-500 hover:text-gray-700">Löschen</button>
                       </div>
                     </div>
                   </div>
@@ -747,7 +842,10 @@
                 <!-- Saved For Later -->
                 <div v-if="activeCartTab === 'Gespeichert' && savedForLater.length > 0" class="space-y-4">
                   <div v-for="(item, index) in savedForLater" :key="index" class="flex gap-4 pb-4 border-b">
-                    <img :src="item.image" :alt="item.name" class="w-20 h-20 object-cover rounded">
+                    <img :src="item.image" 
+                         :alt="item.name" 
+                         class="w-20 h-20 object-cover rounded"
+                         @error="handleImageError($event, item.category)">
                     <div class="flex-1">
                       <h3 class="font-semibold">{{ item.name }}</h3>
                       <p class="text-sm text-gray-500">
@@ -771,7 +869,10 @@
                 <!-- Recently Viewed -->
                 <div v-if="activeCartTab === 'Kürzlich angesehen'" class="space-y-4">
                   <div v-for="item in recentlyViewed" :key="item.id" class="flex gap-4 pb-4 border-b">
-                    <img :src="item.image" :alt="item.name" class="w-20 h-20 object-cover rounded">
+                    <img :src="item.image" 
+                         :alt="item.name" 
+                         class="w-20 h-20 object-cover rounded"
+                         @error="handleImageError($event, item.category)">
                     <div class="flex-1">
                       <h3 class="font-semibold">{{ item.name }}</h3>
                       <p class="text-[#D8127D] font-bold">{{ item.price }} €</p>
@@ -800,6 +901,37 @@
                        'Keine kürzlich angesehenen Artikel' }}
                   </p>
                 </div>
+
+                <!-- Cart Summary -->
+                <div v-if="activeCartTab === 'Warenkorb' && cart.length > 0" class="mt-6 pt-4 border-t">
+                  <div class="flex justify-between text-gray-700 mb-2">
+                    <span>Zwischensumme</span>
+                    <span>{{ cartTotal.toFixed(2) }} €</span>
+                  </div>
+                  <div class="flex justify-between text-gray-700 mb-2">
+                    <span>Versandkosten</span>
+                    <span>{{ shippingCost.toFixed(2) }} €</span>
+                  </div>
+                  <!-- Free Shipping Progress Bar -->
+                  <div class="mb-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-800">
+                    <template v-if="remainingForFreeShipping > 0">
+                      <p class="mb-2">Noch <strong>{{ remainingForFreeShipping.toFixed(2) }} €</strong> bis zum <span class="font-semibold">kostenlosen Versand!</span></p>
+                      <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-[#D8127D] h-2.5 rounded-full" :style="{ width: freeShippingProgress + '%' }"></div>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <p class="font-semibold">Kostenloser Versand! 🎉</p>
+                    </template>
+                  </div>
+
+                  <div class="flex justify-between font-bold text-lg mb-4">
+                    <span>Gesamtsumme</span>
+                    <span>{{ (cartTotal + shippingCost).toFixed(2) }} €</span>
+                  </div>
+                  <button @click="proceedToCheckout" class="btn bg-[#D8127D] text-white w-full mb-3">Zur Kasse</button>
+                  <button @click="isCartOpen = false; currentPage = 'ReadyToBuy'" class="btn bg-gray-200 text-gray-800 w-full">Weiter einkaufen</button>
+                </div>
               </div>
             </div>
           </div>
@@ -813,7 +945,10 @@
         <div class="container mx-auto px-6 py-12">
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                 <div class="col-span-2 md:col-span-4 lg:col-span-1 mb-6 lg:mb-0">
-                    <img src="/assets/group-25.svg" alt="private-shirt.de Logo" class="h-8 mb-4">
+                    <img src="/assets/group-25.svg" 
+                         alt="private-shirt.de Logo" 
+                         class="h-8 mb-4"
+                         @error="handleLogoError">
                     <p class="text-gray-400 text-sm">Dein Druck. Deine Idee. Dein Shirt.</p>
                 </div>
                 <div>
@@ -1068,6 +1203,13 @@ const wooService = {
 
 // Cart Methods
 const addToCart = (product, quantity = 1) => {
+  // If product requires size/color selection and none is selected, show error
+  if ((product.sizes?.length > 0 && !selectedSize.value) || 
+      (product.colors?.length > 0 && !selectedColor.value)) {
+    alert('Bitte wählen Sie Größe und Farbe aus.');
+    return;
+  }
+
   const existingItem = cart.value.find(item => 
     item.id === product.id && 
     item.selectedSize === selectedSize.value && 
@@ -1087,6 +1229,14 @@ const addToCart = (product, quantity = 1) => {
   
   // Save cart to localStorage
   localStorage.setItem('cart', JSON.stringify(cart.value));
+  
+  // Show success message
+  alert('Produkt wurde zum Warenkorb hinzugefügt');
+  
+  // Reset selections
+  selectedSize.value = null;
+  selectedColor.value = null;
+  quantity.value = 1;
 };
 
 const removeFromCart = (index) => {
@@ -1160,12 +1310,15 @@ const initializeData = async () => {
 const formatProduct = (product) => {
   const customizable = product.meta_data?.some(meta => meta.key === '_customizable' && meta.value === 'yes');
   
+  // Get category name for fallback image
+  const categoryName = product.categories[0]?.name?.toLowerCase() || 'clothing';
+  
   return {
     id: product.id,
     category: product.categories[0]?.id.toString() || 'all',
     name: product.name,
     price: product.price,
-    image: product.images[0]?.src || '/assets/placeholder.jpg',
+    image: product.images[0]?.src || getFallbackImage(categoryName),
     description: product.description,
     gallery: product.images.map(img => img.src),
     customizable,
@@ -1177,6 +1330,26 @@ const formatProduct = (product) => {
     weight: product.weight,
     dimensions: product.dimensions
   };
+};
+
+// Utility function to get relevant Unsplash fallback images
+const getFallbackImage = (category) => {
+  const fallbackImages = {
+    't-shirts': 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=800&auto=format&fit=crop',
+    'hoodies': 'https://images.unsplash.com/photo-1556156026-e01c89f5f19c?q=80&w=800&auto=format&fit=crop',
+    'tassen': 'https://images.unsplash.com/photo-1594225019830-798c8a1fe4a0?q=80&w=800&auto=format&fit=crop',
+    'stofftaschen': 'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=800&auto=format&fit=crop',
+    'caps': 'https://images.unsplash.com/photo-1521369909049-ecaf380c8536?q=80&w=800&auto=format&fit=crop',
+    'clothing': 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=800&auto=format&fit=crop',
+    'accessories': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop'
+  };
+
+  return fallbackImages[category] || fallbackImages.clothing;
+};
+
+// Add error handling for images
+const handleImageError = (event, category) => {
+  event.target.src = getFallbackImage(category);
 };
 
 // Computed properties for filtered products
@@ -1282,6 +1455,45 @@ watch(() => currentPage.value, (newPage) => {
       initCanvas();
     });
   }
+});
+
+// Add video error handling
+const handleVideoError = (event) => {
+  // Replace video with a fallback image
+  const videoContainer = event.target.parentElement;
+  const fallbackImage = document.createElement('img');
+  fallbackImage.src = getFallbackImage('clothing');
+  fallbackImage.className = 'absolute inset-0 w-full h-full object-cover';
+  videoContainer.replaceChild(fallbackImage, event.target);
+};
+
+// Add logo error handling
+const handleLogoError = (event) => {
+  // Replace logo with text
+  const logoContainer = event.target.parentElement;
+  const textLogo = document.createElement('span');
+  textLogo.textContent = 'private-shirt.de';
+  textLogo.className = 'text-2xl font-bold text-[#D8127D]';
+  logoContainer.replaceChild(textLogo, event.target);
+};
+
+// Placeholder for shipping cost and discount
+const shippingCost = computed(() => {
+  return cartTotal.value >= 50 ? 0 : 4.99;
+});
+
+const itemsUntilDiscount = computed(() => {
+  const currentItems = cart.value.reduce((sum, item) => sum + item.quantity, 0);
+  // Assuming discount applies at 4 items for simplicity based on previous message
+  return Math.max(0, 4 - currentItems);
+});
+
+const remainingForFreeShipping = computed(() => {
+  return Math.max(0, 50 - cartTotal.value);
+});
+
+const freeShippingProgress = computed(() => {
+  return Math.min(100, (cartTotal.value / 50) * 100);
 });
 
 </script>

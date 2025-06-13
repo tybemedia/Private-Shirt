@@ -15,7 +15,6 @@
           </div>
         </div>
       </section>
-  
       <!-- Why Us -->
       <section class="py-16 sm:py-24">
         <div class="container mx-auto px-6">
