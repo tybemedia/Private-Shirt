@@ -777,7 +777,7 @@
 
           <!-- Creator Page -->
           <div v-if="currentPage === 'Creator'" class="container mx-auto px-4 py-8">
-            <DesignCreator />
+            <DesignCreator @add-to-cart="addCustomDesignToCart" />
           </div>
 
           <!-- Enhanced Cart Sidebar -->
@@ -1237,6 +1237,18 @@ const addToCart = (product, quantity = 1) => {
   selectedSize.value = null;
   selectedColor.value = null;
   quantity.value = 1;
+};
+
+const addCustomDesignToCart = ({ image, price }) => {
+  cart.value.push({
+    id: Date.now(),
+    name: 'Eigenes Design',
+    image,
+    price,
+    quantity: 1
+  });
+  localStorage.setItem('cart', JSON.stringify(cart.value));
+  alert('Design wurde zum Warenkorb hinzugefügt');
 };
 
 const removeFromCart = (index) => {
