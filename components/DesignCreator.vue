@@ -9,8 +9,8 @@
           <div class="bg-white p-4 rounded-lg shadow-md">
             <h2 class="font-semibold mb-4">Werkzeuge</h2>
             <div class="space-y-2">
-              <button 
-                v-for="tool in ['text', 'image', 'shape']" 
+              <button
+                v-for="tool in ['text', 'image', 'pattern', 'shape']"
                 :key="tool"
                 @click="selectedTool = tool"
                 :class="['w-full p-2 rounded', selectedTool === tool ? 'bg-[#D8127D] text-white' : 'bg-gray-100']"
@@ -50,6 +50,20 @@
             >
           </div>
 
+          <!-- Pattern Options -->
+          <div v-if="selectedTool === 'pattern'" class="bg-white p-4 rounded-lg shadow-md">
+            <h2 class="font-semibold mb-4">Muster</h2>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="p in patterns"
+                :key="p.name"
+                @click="applyPattern(p.name)"
+                :style="{ backgroundImage: p.preview, backgroundSize: '20px 20px' }"
+                class="h-12 w-full rounded border"
+              ></button>
+            </div>
+          </div>
+
           <!-- Shape Options -->
           <div v-if="selectedTool === 'shape'" class="bg-white p-4 rounded-lg shadow-md">
             <h2 class="font-semibold mb-4">Formen</h2>
@@ -86,6 +100,9 @@
               </button>
               <button @click="saveDesign" class="btn bg-[#D8127D] text-white w-full">
                 Design speichern
+              </button>
+              <button @click="addToCart" class="btn bg-green-600 text-white w-full">
+                In den Warenkorb
               </button>
             </div>
           </div>
@@ -127,6 +144,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import 'fabric';
 const fabric = window.fabric;
+const emit = defineEmits(['add-to-cart']);
 
 const canvas = ref(null);
 const selectedTool = ref('text');
@@ -138,6 +156,22 @@ const uploadedImage = ref(null);
 const selectedObject = ref(null);
 const history = ref([]);
 const historyIndex = ref(-1);
+const designPrice = 19.99;
+
+const patterns = [
+  {
+    name: 'stripes',
+    preview: 'repeating-linear-gradient(45deg,#eee 0px,#eee 10px,#fff 10px,#fff 20px)'
+  },
+  {
+    name: 'dots',
+    preview: 'radial-gradient(#ccc 1px,transparent 1px)',
+  },
+  {
+    name: 'grid',
+    preview: 'repeating-linear-gradient(#ccc 0 2px,transparent 2px 20px),repeating-linear-gradient(90deg,#ccc 0 2px,transparent 2px 20px)'
+  }
+];
 
 let fabricCanvas = null;
 
@@ -264,6 +298,46 @@ const clearCanvas = () => {
   fabricCanvas.clear();
   fabricCanvas.backgroundColor = '#ffffff';
   saveToHistory();
+};
+
+const applyPattern = (type) => {
+  if (!fabricCanvas) return;
+  const patternCanvas = document.createElement('canvas');
+  patternCanvas.width = patternCanvas.height = 20;
+  const ctx = patternCanvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 20, 20);
+  switch (type) {
+    case 'stripes':
+      ctx.fillStyle = '#e5e5e5';
+      ctx.fillRect(0, 0, 20, 10);
+      break;
+    case 'dots':
+      ctx.fillStyle = '#ccc';
+      ctx.beginPath();
+      ctx.arc(10, 10, 3, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'grid':
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(10, 0);
+      ctx.lineTo(10, 20);
+      ctx.moveTo(0, 10);
+      ctx.lineTo(20, 10);
+      ctx.stroke();
+      break;
+  }
+  const pattern = new fabric.Pattern({ source: patternCanvas, repeat: 'repeat' });
+  fabricCanvas.setBackgroundColor(pattern, fabricCanvas.renderAll.bind(fabricCanvas));
+  saveToHistory();
+};
+
+const addToCart = () => {
+  if (!fabricCanvas) return;
+  const dataURL = fabricCanvas.toDataURL({ format: 'png', quality: 1 });
+  emit('add-to-cart', { image: dataURL, price: designPrice });
 };
 
 const saveDesign = () => {
