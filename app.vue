@@ -1,5 +1,12 @@
 <template>
   <div class="bg-gray-50 min-h-screen font-sans text-gray-800">
+    <!-- Notification Bar -->
+    <div class="bg-gray-900 text-white text-center py-2 text-sm font-medium overflow-hidden relative h-8">
+      <transition name="slide-fade" mode="out-in">
+        <span :key="currentNotificationMessage">{{ notificationMessages[currentNotificationMessage] }}</span>
+      </transition>
+    </div>
+
     <!-- 
       This is a single-file Vue 3 prototype simulating a multi-page Nuxt.js application.
       In a real Nuxt project, each page (Home, T-Shirts, etc.) and component (Header, Footer)
@@ -18,8 +25,7 @@
         </div>
         <div class="hidden lg:flex items-center space-x-8">
           <a @click="currentPage = 'ReadyToBuy'" class="nav-link">Fertige Produkte</a>
-          <a @click="currentPage = 'Customizable'" class="nav-link">Individuell gestalten</a>
-          <a @click="currentPage = 'Creator'" class="nav-link">Creator</a>
+          <a @click="currentPage = 'CustomizationCreator'" class="nav-link">Gestalten / Creator</a>
           <a @click="currentPage = 'Grossbestellung'" class="nav-link">Großbestellung</a>
         </div>
         <div>
@@ -161,7 +167,7 @@
           </div>
 
           <!-- CUSTOMIZABLE PRODUCTS PAGE -->
-          <div v-if="currentPage === 'Customizable'">
+          <div v-if="currentPage === 'CustomizationCreator'">
             <div class="container mx-auto px-6 py-12">
               <h1 class="text-4xl font-bold mb-2">Individuell gestalten</h1>
               <p class="text-lg text-gray-600 mb-10">Gestalte deine eigenen Produkte nach deinen Wünschen.</p>
@@ -196,6 +202,13 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Creator Section within the combined page -->
+            <div class="container mx-auto px-6 py-12">
+              <h1 class="text-4xl font-bold mb-2">Werde Creator!</h1>
+              <p class="text-lg text-gray-600 mb-10">Verkaufe deine Designs auf unseren Produkten – ohne Risiko und ohne Kosten.</p>
+              <DesignCreator />
             </div>
           </div>
 
@@ -233,18 +246,157 @@
               </div>
             </section>
 
-            <!-- Top Categories (/components/CategoryTiles.vue) -->
+            <!-- Bestsellers Section -->
             <section class="py-12 bg-white">
               <div class="container mx-auto px-6">
-                <h2 class="text-3xl font-bold text-center mb-8">Entdecke unsere Bestseller</h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-                  <div v-for="category in categories" :key="category.name" class="category-tile group" @click="currentPage = category.page">
-                    <img :src="category.image" 
-                         :alt="`[Bild von ${category.name}]`" 
-                         class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                         @error="handleImageError($event, category.name.toLowerCase())">
-                    <div class="absolute inset-0 bg-black/30"></div>
-                    <span class="absolute bottom-4 left-4 text-white text-xl font-semibold">{{ category.name }}</span>
+                <h2 class="text-3xl font-bold text-center mb-8">Unsere Bestseller</h2>
+                <div class="relative">
+                  <div class="overflow-hidden">
+                    <transition-group name="slide" tag="div" class="flex">
+                      <div v-for="product in paginatedBestsellers" 
+                           :key="product.id" 
+                           class="bg-white rounded-lg shadow-md overflow-hidden group flex-shrink-0"
+                           :style="{ width: `${100 / productsPerSlide}%`, padding: '0 0.75rem' }">
+                        <div class="relative">
+                          <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
+                               @error="handleImageError($event, product.category)">
+                          <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button @click.stop="currentPage = 'ProductDetail'; selectedProduct = product" 
+                                    class="btn bg-white text-gray-900">Details anzeigen</button>
+                          </div>
+                        </div>
+                        <div class="p-4">
+                          <h4 class="font-semibold">{{ product.name }}</h4>
+                          <p class="text-[#D8127D] font-bold">{{ product.price }} €</p>
+                        </div>
+                      </div>
+                    </transition-group>
+                  </div>
+                  <!-- Carousel Navigation -->
+                  <button @click="prevBestsellerPage" 
+                          v-if="currentBestsellerPage > 0" 
+                          class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                  </button>
+                  <button @click="nextBestsellerPage" 
+                          v-if="(currentBestsellerPage + 1) * productsPerSlide < readyToBuyProducts.slice(0, 12).length" 
+                          class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="text-center mt-8">
+                  <button @click="currentPage = 'ReadyToBuy'" class="btn bg-gray-200 text-gray-800 hover:bg-gray-300">Alle Produkte ansehen</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Bereit für den Sommer Section -->
+            <section class="py-12">
+              <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-center mb-8">Bereit für den Sommer?</h2>
+                <div class="relative">
+                  <div class="overflow-hidden">
+                    <transition-group name="slide" tag="div" class="flex">
+                      <div v-for="product in paginatedSummerProducts" 
+                           :key="product.id" 
+                           class="bg-white rounded-lg shadow-md overflow-hidden group flex-shrink-0"
+                           :style="{ width: `${100 / productsPerSlide}%`, padding: '0 0.75rem' }">
+                        <div class="relative">
+                          <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
+                               @error="handleImageError($event, product.category)">
+                          <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button @click.stop="currentPage = 'ProductDetail'; selectedProduct = product" 
+                                    class="btn bg-white text-gray-900">Details anzeigen</button>
+                          </div>
+                        </div>
+                        <div class="p-4">
+                          <h4 class="font-semibold">{{ product.name }}</h4>
+                          <p class="text-[#D8127D] font-bold">{{ product.price }} €</p>
+                        </div>
+                      </div>
+                    </transition-group>
+                  </div>
+                  <!-- Carousel Navigation -->
+                  <button @click="prevSummerPage" 
+                          v-if="currentSummerPage > 0" 
+                          class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                  </button>
+                  <button @click="nextSummerPage" 
+                          v-if="(currentSummerPage + 1) * productsPerSlide < readyToBuyProducts.slice(4, 8).length" 
+                          class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="text-center mt-8">
+                  <button @click="currentPage = 'ReadyToBuy'" class="btn bg-gray-200 text-gray-800 hover:bg-gray-300">Mehr Sommer-Produkte</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Custom Creator CTA Section -->
+            <section class="py-16 sm:py-24 bg-white">
+              <div class="container mx-auto px-6">
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                  <div class="md:w-1/2">
+                    <img src="https://images.unsplash.com/photo-1597374399280-541892788610?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                         alt="Person creating a custom design" 
+                         class="rounded-lg shadow-lg w-full h-auto object-cover">
+                  </div>
+                  <div class="md:w-1/2 text-center md:text-left">
+                    <h2 class="text-3xl font-bold mb-4">Gestalte deine eigene Kleidung</h2>
+                    <p class="text-lg text-gray-600 mb-6">
+                      Lass deiner Kreativität freien Lauf! Mit unserem einfachen Online-Creator kannst du T-Shirts, Hoodies, Tassen und mehr mit deinen eigenen Designs, Texten und Bildern gestalten.
+                    </p>
+                    <button @click="currentPage = 'CustomizationCreator'" class="btn btn-primary btn-lg">Jetzt gestalten</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- For Corporate Clothing Section -->
+            <section class="py-16 sm:py-24 bg-gray-100">
+              <div class="container mx-auto px-6">
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                  <div class="md:w-1/2 order-2 md:order-1 text-center md:text-left">
+                    <h2 class="text-3xl font-bold mb-4">Dein professioneller Auftritt: Firmenkleidung</h2>
+                    <p class="text-lg text-gray-600 mb-6">
+                      Statte dein Team mit hochwertiger, individuell bedruckter Firmenkleidung aus. Ob T-Shirts, Polos oder Jacken – wir sorgen für einen einheitlichen und professionellen Look.
+                    </p>
+                    <button @click="currentPage = 'Grossbestellung'" class="btn btn-primary btn-lg">Jetzt anfragen</button>
+                  </div>
+                  <div class="md:w-1/2 order-1 md:order-2">
+                    <img src="https://images.unsplash.com/photo-1637225999234-eb7da046cb4b?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                         alt="Team in custom corporate t-shirts" 
+                         class="rounded-lg shadow-lg w-full h-auto object-cover">
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- For Bachelor Party Section -->
+            <section class="py-16 sm:py-24 bg-white">
+              <div class="container mx-auto px-6">
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                  <div class="md:w-1/2">
+                    <img src="https://images.unsplash.com/photo-1684244177286-8625c54bce6d?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                         alt="Group of friends celebrating bachelor party" 
+                         class="rounded-lg shadow-lg w-full h-auto object-cover">
+                  </div>
+                  <div class="md:w-1/2 text-center md:text-left">
+                    <h2 class="text-3xl font-bold mb-4">Unvergesslich feiern: Dein Junggesellenabschied</h2>
+                    <p class="text-lg text-gray-600 mb-6">
+                      Macht euren Junggesellenabschied zu einem unvergesslichen Event mit individuellen Shirts, die eure Freundschaft und diesen besonderen Anlass feiern. Witzige Sprüche, coole Designs – alles ist möglich!
+                    </p>
+                    <button @click="currentPage = 'CustomizationCreator'" class="btn btn-primary btn-lg">Jetzt gestalten</button>
                   </div>
                 </div>
               </div>
@@ -295,7 +447,7 @@
                         <div class="bg-indigo-600 text-white p-10 rounded-xl shadow-lg text-center">
                             <h3 class="text-2xl font-bold mb-3">Werde Creator!</h3>
                             <p class="opacity-80 mb-6">Verkaufe deine Designs auf unseren Produkten – ohne Risiko und ohne Kosten.</p>
-                             <button @click="currentPage = 'Creator'" class="btn btn-primary-inverted">Kostenlos starten</button>
+                             <button @click="currentPage = 'CustomizationCreator'" class="btn btn-primary-inverted">Kostenlos starten</button>
                         </div>
                     </div>
                 </div>
@@ -309,7 +461,7 @@
               <div class="flex items-center space-x-2 text-sm text-gray-500 mb-8">
                 <a @click="currentPage = 'Home'" class="hover:text-[#D8127D] cursor-pointer">Home</a>
                 <span>/</span>
-                <a @click="currentPage = selectedProduct.customizable ? 'Customizable' : 'ReadyToBuy'" 
+                <a @click="currentPage = selectedProduct.customizable ? 'CustomizationCreator' : 'ReadyToBuy'" 
                    class="hover:text-[#D8127D] cursor-pointer">
                   {{ selectedProduct.customizable ? 'Individuell gestalten' : 'Fertige Produkte' }}
                 </a>
@@ -646,7 +798,7 @@
           </div>
             
           <!-- OTHER PAGES (Placeholders) -->
-          <div v-if="!['Home', 'ReadyToBuy', 'Customizable', 'Grossbestellung'].includes(currentPage)">
+          <div v-if="!['Home', 'ReadyToBuy', 'CustomizationCreator', 'Grossbestellung'].includes(currentPage)">
               <div class="container mx-auto px-6 py-24 text-center">
                   <h1 class="text-4xl font-bold mb-4">{{ currentPage }}</h1>
                   <p class="text-lg text-gray-600">Diese Seite befindet sich im Aufbau.</p>
@@ -777,7 +929,7 @@
 
           <!-- Creator Page -->
           <div v-if="currentPage === 'Creator'" class="container mx-auto px-4 py-8">
-            <DesignCreator @add-to-cart="addCustomDesignToCart" />
+            <DesignCreator />
           </div>
 
           <!-- Enhanced Cart Sidebar -->
@@ -1031,7 +1183,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import DesignCreator from './components/DesignCreator.vue'
 
 // WooCommerce API Configuration
@@ -1112,6 +1264,14 @@ const textColor = ref('#000000')
 const fontSize = ref(20)
 const uploadedImages = ref([])
 const activeCartTab = ref('Warenkorb')
+
+// Notification Bar State
+const notificationMessages = ref([
+  'Kostenfreier Versand ab 50€',
+  'Abholung im Store am nächsten Tag bei Bestellungen bis 12 Uhr'
+]);
+const currentNotificationMessage = ref(0);
+let notificationInterval = null;
 
 // Debounce function
 const debounce = (fn, delay) => {
@@ -1375,7 +1535,21 @@ const filteredCustomizableProducts = computed(() => {
   return customizableProducts.value.filter(product => product.category === selectedCategory.value);
 });
 
-// Load data on component mount
+// Function to cycle through messages
+const startNotificationSlider = () => {
+  notificationInterval = setInterval(() => {
+    currentNotificationMessage.value = (currentNotificationMessage.value + 1) % notificationMessages.value.length;
+  }, 5000); // Change message every 5 seconds
+};
+
+// Stop the slider when component is unmounted
+onUnmounted(() => {
+  if (notificationInterval) {
+    clearInterval(notificationInterval);
+  }
+});
+
+// Start the slider on mount
 onMounted(() => {
   const savedCart = localStorage.getItem('cart');
   const savedForLaterData = localStorage.getItem('savedForLater');
@@ -1386,6 +1560,7 @@ onMounted(() => {
   if (recentlyViewedData) recentlyViewed.value = JSON.parse(recentlyViewedData);
   
   initializeData();
+  startNotificationSlider(); // Start the slider
 });
 
 // Icons from Lucide (lucide.dev) - using raw SVG paths
@@ -1508,6 +1683,88 @@ const freeShippingProgress = computed(() => {
   return Math.min(100, (cartTotal.value / 50) * 100);
 });
 
+// Bestseller Carousel State
+const productsPerSlide = ref(4);
+const currentBestsellerPage = ref(0);
+
+// Computed property for paginated bestsellers
+const paginatedBestsellers = computed(() => {
+  const start = currentBestsellerPage.value * productsPerSlide.value;
+  const end = start + productsPerSlide.value;
+  return readyToBuyProducts.value.slice(0, 12).slice(start, end);
+});
+
+// Carousel Navigation Methods
+const nextBestsellerPage = () => {
+  const maxPage = Math.ceil(readyToBuyProducts.value.slice(0, 12).length / productsPerSlide.value) - 1;
+  if (currentBestsellerPage.value < maxPage) {
+    currentBestsellerPage.value++;
+  }
+};
+
+const prevBestsellerPage = () => {
+  if (currentBestsellerPage.value > 0) {
+    currentBestsellerPage.value--;
+  }
+};
+
+// Bereit für den Sommer Section
+const currentSummerPage = ref(0);
+const paginatedSummerProducts = computed(() => {
+  const start = currentSummerPage.value * productsPerSlide.value;
+  const end = start + productsPerSlide.value;
+  return readyToBuyProducts.value.slice(4, 8).slice(start, end);
+});
+
+const nextSummerPage = () => {
+  const maxPage = Math.ceil(readyToBuyProducts.value.slice(4, 8).length / productsPerSlide.value) - 1;
+  if (currentSummerPage.value < maxPage) {
+    currentSummerPage.value++;
+  }
+};
+
+const prevSummerPage = () => {
+  if (currentSummerPage.value > 0) {
+    currentSummerPage.value--;
+  }
+};
+
+// Custom Creator CTA Section
+const handleCustomCreatorCTA = () => {
+  // Implement custom creator CTA logic
+  console.log('Custom Creator CTA clicked');
+};
+
+// For Corporate Clothing Section
+const handleCorporateClothing = () => {
+  // Implement corporate clothing logic
+  console.log('Corporate Clothing clicked');
+};
+
+// For Bachelor Party Section
+const handleBachelorParty = () => {
+  // Implement bachelor party logic
+  console.log('Bachelor Party clicked');
+};
+
+// Why Us? Section
+const handleWhyUs = () => {
+  // Implement why us logic
+  console.log('Why Us clicked');
+};
+
+// Testimonials Section
+const handleTestimonials = () => {
+  // Implement testimonials logic
+  console.log('Testimonials clicked');
+};
+
+// B2B & Creator CTA Sections
+const handleB2BAndCreatorCTA = () => {
+  // Implement B2B and creator CTA logic
+  console.log('B2B and Creator CTA clicked');
+};
+
 </script>
 
 <style>
@@ -1564,6 +1821,22 @@ body {
 }
 .fade-enter-from,
 .fade-leave-to {
+  opacity: 0;
+}
+
+/* Notification Slider Transitions */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.5s ease;
+  position: absolute;
+  width: 100%;
+}
+.slide-fade-enter-from {
+  transform: translateY(100%);
+  opacity: 0;
+}
+.slide-fade-leave-to {
+  transform: translateY(-100%);
   opacity: 0;
 }
 
@@ -1638,5 +1911,22 @@ svg {
 
 .cart-tab-active {
   @apply border-[#D8127D] text-[#D8127D];
+}
+
+/* Carousel Transitions */
+.slide-enter-active, .slide-leave-active {
+  transition: all 0.5s ease;
+}
+.slide-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+.slide-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+.slide-enter-to, .slide-leave-from {
+  opacity: 1;
+  transform: translateX(0);
 }
 </style>
