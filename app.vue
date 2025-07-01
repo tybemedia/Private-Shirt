@@ -24,12 +24,13 @@
                @error="handleLogoError">
         </div>
         <div class="hidden lg:flex items-center space-x-8">
-          <a @click="currentPage = 'ReadyToBuy'" class="nav-link">Fertige Produkte</a>
+          <a @mouseenter="fertigeProdukteHover = true" @mouseleave="fertigeProdukteHover = false" @click="currentPage = 'ReadyToBuy'" class="nav-link relative">
+            Fertige Produkte
+          </a>
           <a @click="currentPage = 'CustomizationCreator'" class="nav-link">Gestalten / Creator</a>
           <a @click="currentPage = 'Grossbestellung'" class="nav-link">Großbestellung</a>
         </div>
         <div>
-          <button @click="currentPage = 'Grossbestellung'" class="btn btn-secondary hidden sm:inline-block">Großbestellung</button>
           <!-- Cart Icon -->
           <button @click="isCartOpen = !isCartOpen" class="relative ml-4 p-2 rounded-full hover:bg-gray-100 transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -46,6 +47,16 @@
           </button>
         </div>
       </nav>
+      <!-- Submenu Bar -->
+      <transition name="fade">
+        <div v-if="fertigeProdukteHover" @mouseenter="fertigeProdukteHover = true" @mouseleave="fertigeProdukteHover = false" class="fixed left-0 right-0 top-[72px] z-50 bg-gray-100 border-b border-gray-200 shadow-sm">
+          <div class="container mx-auto px-6 flex space-x-8 py-2 justify-center">
+            <button v-for="cat in submenuCategories" :key="cat.id" class="text-gray-700 hover:text-[#D8127D] font-medium px-3 py-1 rounded transition">
+              {{ cat.name }}
+            </button>
+          </div>
+        </div>
+      </transition>
     </header>
 
     <main>
@@ -216,16 +227,16 @@
           <div v-if="currentPage === 'Home'">
             <!-- Hero Section -->
             <section class="relative h-[50vh] flex">
-              <!-- Left side - Brand color with text -->
-              <div class="w-1/2 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-8">
-                <div class="max-w-xl text-white">
+              <!-- Left side - White background with brand colors for text -->
+              <div class="w-1/2 bg-white flex items-center justify-center p-8">
+                <div class="max-w-xl">
                   <h1 class="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight mb-3">
-                    <span class="text-[#D8127D]">Individuell</span> bedruckte Shirts & mehr – in Premium-Qualität
+                    <span class="text-[#D8127D]">Individuell</span> <span class="text-[#D8127D]">bedruckte</span> <span class="text-[#0a3a47]">Shirts & mehr</span> – in Premium-Qualität
                   </h1>
-                  <p class="text-base md:text-xl font-light mb-6">Für dich, dein Team oder dein Business – ab 1 Stück.</p>
+                  <p class="text-base md:text-xl font-light mb-6 text-[#0a3a47]">Für dich, dein Team oder dein Business – ab 1 Stück.</p>
                   <div class="flex flex-col sm:flex-row gap-4">
-                    <button class="btn bg-[#D8127D] hover:bg-[#b30f68] text-white">Jetzt gestalten</button>
-                    <button @click="currentPage = 'Grossbestellung'" class="btn border-2 border-white text-white hover:bg-white hover:text-gray-900">Großbestellung anfragen</button>
+                    <button class="btn bg-[#ffd44d] hover:bg-[#ffe28a] text-[#0a3a47] border-2 border-[#ffd44d]">Jetzt gestalten</button>
+                    <button @click="currentPage = 'Grossbestellung'" class="btn border-2 border-[#D8127D] text-[#D8127D] hover:bg-[#D8127D] hover:text-white">Großbestellung anfragen</button>
                   </div>
                 </div>
               </div>
@@ -241,10 +252,12 @@
                   playsinline
                   @error="handleVideoError"
                 >
-                  <source src="https://videos.pexels.com/video-files/7567992/7567992-hd_1920_1080_25fps.mp4" type="video/mp4">
+                  <source src="./assets/6012102_Lifeguard_Pool_1280x720.mp4" type="video/mp4">
                 </video>
               </div>
             </section>
+
+           
 
             <!-- Bestsellers Section -->
             <section class="py-12 bg-white">
@@ -385,6 +398,24 @@
             <!-- For Bachelor Party Section -->
             <section class="py-16 sm:py-24 bg-white">
               <div class="container mx-auto px-6">
+                 <!-- References Section -->
+              <div class="container mx-auto px-6" style="margin-bottom: 1em">
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-6">Unsere Kunden vertrauen uns</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 items-center justify-center">
+                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
+                    <img src="https://www.peopleplan.eu/wp-content/uploads/sites/6/2023/01/Hochbahn-2.png" alt="Business Team" class="h-16 object-contain" />
+                  </div>
+                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
+                    <img src="https://app.tradersclub24.de/wp-content/uploads/2023/09/Hapag_lloyd_logo.png" alt="Group in Shirts" class="h-16 object-contain" />
+                  </div>
+                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
+                    <img src="https://espressohouse.zendesk.com/hc/theming_assets/01HZPM9NQSV96Y55Z1PZM2S2Y6" alt="Team Mugs" class="h-16 object-contain" />
+                  </div>
+                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiVzAKXb_clXNwslAGqeZfH_dHmFyYZeUg7A&s" alt="Startup Office" class="h-16 object-contain" />
+                  </div>
+                </div>
+              </div>
                 <div class="flex flex-col md:flex-row items-center gap-12">
                   <div class="md:w-1/2">
                     <img src="https://images.unsplash.com/photo-1684244177286-8625c54bce6d?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
@@ -473,7 +504,7 @@
                 <!-- Product Images -->
                 <div class="space-y-4">
                   <div class="relative aspect-square rounded-lg overflow-hidden">
-                    <img :src="selectedProduct.image" 
+                    <img :src="selectedImage || selectedProduct.image" 
                          :alt="selectedProduct.name" 
                          class="w-full h-full object-cover"
                          @error="handleImageError($event, selectedProduct.category)">
@@ -514,24 +545,24 @@
 
                   <!-- Product Options -->
                   <div class="space-y-6">
-                    <!-- Size Selection -->
+                    <!-- Size/Quantity Selection -->
                     <div v-if="selectedProduct.sizes">
                       <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-semibold">Größe</h3>
+                        <h3 class="font-semibold">Größe / Menge wählen</h3>
                         <button class="text-sm text-[#D8127D] hover:underline">Größentabelle</button>
                       </div>
-                      <div class="flex flex-wrap gap-2">
-                        <button v-for="size in selectedProduct.sizes" 
-                                :key="size"
-                                @click="selectedSize = size"
-                                class="px-4 py-2 border rounded-lg hover:border-[#D8127D] hover:text-[#D8127D] transition"
-                                :class="selectedSize === size ? 'border-[#D8127D] text-[#D8127D]' : ''">
-                          {{ size }}
-                        </button>
+                      <div class="divide-y divide-gray-200 border rounded-lg overflow-hidden">
+                        <div v-for="size in selectedProduct.sizes" :key="size" class="flex items-center px-4 py-2">
+                          <span class="w-12 font-bold text-gray-800">{{ size }}</span>
+                          <div class="flex items-center ml-auto">
+                            <button @click="sizeQuantities[size] = Math.max(0, sizeQuantities[size] - 1)" class="w-8 h-8 border rounded-l flex items-center justify-center text-gray-700 hover:bg-gray-100">-</button>
+                            <input type="number" v-model.number="sizeQuantities[size]" min="0" class="w-12 text-center border-t border-b focus:outline-none" />
+                            <button @click="sizeQuantities[size] = sizeQuantities[size] + 1" class="w-8 h-8 border rounded-r flex items-center justify-center text-gray-700 hover:bg-gray-100">+</button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <!-- Color Selection -->
+                    <!-- Color Selection (unchanged) -->
                     <div v-if="selectedProduct.colors">
                       <h3 class="font-semibold mb-2">Farbe</h3>
                       <div class="flex flex-wrap gap-2">
@@ -544,9 +575,8 @@
                         </button>
                       </div>
                     </div>
-
-                    <!-- Quantity -->
-                    <div>
+                    <!-- Quantity (hidden if sizes) -->
+                    <div v-if="!selectedProduct.sizes">
                       <h3 class="font-semibold mb-2">Menge</h3>
                       <div class="flex items-center gap-4">
                         <button @click="quantity = Math.max(1, quantity - 1)" 
@@ -571,7 +601,7 @@
                         Jetzt gestalten
                       </button>
                       <button v-else 
-                              @click="addToCart(selectedProduct, quantity)"
+                              @click="addToCart(selectedProduct)"
                               class="btn bg-[#D8127D] text-white flex-1 hover:bg-[#b30f68]">
                         In den Warenkorb
                       </button>
@@ -700,7 +730,141 @@
             </div>
           </div>
 
-          <!-- Store Locations Section -->
+          <!-- After the product detail tabs/content -->
+          <div v-if="currentPage === 'ProductDetail' && selectedProduct" class="mt-12">
+            <section class="bg-[#f8f8f6] border-t border-gray-200 py-10">
+              <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12">
+                <!-- Left: Description and Details -->
+                <div>
+                  <h2 class="text-2xl font-bold mb-2">{{ selectedProduct.name }}</h2>
+                  <h3 class="font-semibold mb-2">Dieses Basic T-Shirt sorgt für einen modernen Look</h3>
+                  <p class="mb-4 text-gray-700">Das Basic T-Shirt für Frauen und Männer aus der B&C Collection steht für eine zeitgemäße Passform und eine moderne Optik. Die zu 100% ringgesponnene, einlaufvorbehandelte Baumwolle (Ash: 99% Baumwolle, 1% Viskose; Sport Grey: 85% Baumwolle, 15% Viskose) mit einer Stoffdichte von 145 g/m² ist besonders strapazierfähig und weist eine ebenmäßige und weiche Oberfläche auf. Der schlauchförmige Schnitt hebt die hervorragende Passform weiter hervor.</p>
+                  <h4 class="font-semibold mb-2">Ein schickes T-Shirt für alle Tage</h4>
+                  <p class="mb-4 text-gray-700">Wenn man sich leicht und locker einkleiden möchte, dann hat das Unisex Basic T-Shirt seinen ganz großen Auftritt. Es steht für Lässigkeit und punktet mit seinem innovativen Design. Das T-Shirt lässt sich in vielen verschiedenen Farben bestellen. Der schmale Kragen sieht ansprechend aus, wurde er doch aus flexiblem Rippstrick mit Elasthan gefertigt. Im Nacken ist für mehr Formstabilität ein Kragenband verarbeitet. Das Label B&C setzt sich zudem für faire Arbeitsbedingungen in den Produktionsstätten ein. Dafür sorgt die Mitgliedschaft in der Fair Wear Foundation.</p>
+                  <div class="bg-blue-100 border border-blue-300 rounded p-3 mb-4">
+                    <span class="font-semibold text-blue-800 block mb-1">Hinweis zur Farbe Natural:</span>
+                    <span class="text-blue-800 text-sm">Die natürliche Struktur des Natural Garns ist sichtbar.</span>
+                  </div>
+                  <table class="w-full text-sm mb-4">
+                    <tbody>
+                      <tr><td class="font-semibold pr-2">Artikel-Nr.:</td><td>BCTU01T</td></tr>
+                      <tr><td class="font-semibold pr-2">Hersteller:</td><td>B&C</td></tr>
+                      <tr><td class="font-semibold pr-2">Herstellungsland:</td><td>Bangladesch</td></tr>
+                      <tr><td class="font-semibold pr-2">Druckarten:</td><td>Flexdruck, Flockdruck, Spezial Flexdruck, Digitaltransferdruck</td></tr>
+                      <tr><td class="font-semibold pr-2">Materialzusammensetzung:</td><td>100% einlaufvorbehandelte, ringgesponnene Baumwolle (Ash: 99% Baumwolle, 1% Viskose; Sport Grey: 85% Baumwolle, 15% Viskose)</td></tr>
+                      <tr><td class="font-semibold pr-2">Produktsicherheit (GPSR):</td><td>The Cotton Group SA/NV, Drève Richelle 161, 1410 Waterloo, Belgium, info@bc-collection.eu</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <!-- Right: Size chart and print info -->
+                <div>
+                  <h3 class="font-semibold mb-2">Größentabelle</h3>
+                  <div class="flex items-center mb-2">
+                    <img src="/assets/shirt.svg" alt="Größentabelle Illustration" class="w-24 h-24 mr-4" />
+                    <table class="text-xs border-collapse">
+                      <thead>
+                        <tr class="text-left">
+                          <th class="pr-2">Größe</th>
+                          <th class="pr-2">Maß A (cm)</th>
+                          <th class="pr-2">Maß B (cm)</th>
+                          <th>Maß C (cm)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="row in [
+                          {g: 'XS', a: '68,0', b: '45,0', c: '17,0'},
+                          {g: 'S', a: '70,0', b: '48,0', c: '17,0'},
+                          {g: 'M', a: '72,0', b: '51,0', c: '18,0'},
+                          {g: 'L', a: '74,0', b: '54,0', c: '19,0'},
+                          {g: 'XL', a: '76,0', b: '57,0', c: '20,0'},
+                          {g: 'XXL', a: '78,0', b: '60,0', c: '21,0'}
+                        ]" :key="row.g">
+                          <td class="pr-2">{{ row.g }}</td>
+                          <td class="pr-2">{{ row.a }}</td>
+                          <td class="pr-2">{{ row.b }}</td>
+                          <td>{{ row.c }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="text-xs text-gray-500 mb-4">A = Länge in cm, B = Breite in cm, C = Länge in cm<br>Es kann eine handelsübliche Toleranz von +/- 5% bestehen!</div>
+                  <h4 class="font-semibold mb-2">Design- und Produktgröße</h4>
+                  <p class="text-sm mb-2">Unsere Produktbilder zeigen Durchschnittsgrößen. Bestellst Du ein besonders großes Produkt, wird das Design nicht automatisch an den größeren Druckbereich angepasst.</p>
+                  <p class="text-xs text-gray-600 mb-2">Unser Tipp: Zieh Dein Design größer, damit es zur Größe Deines Produkts passt. <a href="#" class="text-[#D8127D] underline">Mehr erfahren</a></p>
+                  <div class="flex items-end gap-2 mt-4">
+                    <img src="/assets/printarea-kinder.svg" alt="Printarea Kinder" class="h-60" />
+                  </div>
+                </div>
+              </div>
+              <!-- Payment, shipping, returns info -->
+              <div class="container mx-auto px-6 mt-10 grid md:grid-cols-3 gap-8 text-center text-xs text-gray-700">
+                <div>
+                  <div class="font-semibold mb-2">Sichere Zahlungsmethoden</div>
+                  <div class="flex justify-center gap-2 mb-2">
+                    <span>PayPal</span><span>Klarna</span><span>VISA</span><span>Mastercard</span>
+                  </div>
+                  <a href="#" class="underline">Mehr erfahren</a>
+                </div>
+                <div>
+                  <div class="font-semibold mb-2">Internationale Lieferung</div>
+                  <div class="flex justify-center gap-2 mb-2">
+                    <span>DHL</span><span>UPS</span><span>Express</span>
+                  </div>
+                  <a href="#" class="underline">Mehr zum Versand erfahren</a>
+                </div>
+                <div>
+                  <div class="font-semibold mb-2">Unsere fairen Rückgaberegeln</div>
+                  <div class="flex justify-center gap-2 mb-2">
+                    <span>14 Tage Rückgaberecht</span>
+                  </div>
+                  <a href="#" class="underline">Mehr erfahren</a>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- GROSSBESTELLUNG PAGE (/pages/grossbestellung.vue) -->
+          <div v-if="currentPage === 'Grossbestellung'">
+            <div class="bg-white">
+                <div class="container mx-auto px-6 py-16">
+                    <div class="max-w-4xl mx-auto">
+                        <h1 class="text-4xl font-bold text-center mb-4">Großbestellungen für Ihr Business</h1>
+                        <p class="text-xl text-gray-600 text-center mb-12">Perfekt für Firmen, Vereine, Events und Merchandise.</p>
+
+                        <div class="grid md:grid-cols-3 gap-8 text-center mb-16">
+                           <div v-for="benefit in b2bBenefits" :key="benefit.title" class="p-4">
+                               <div class="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 text-indigo-600 mx-auto mb-4">
+                                  <svg v-html="benefit.icon" class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
+                               </div>
+                               <h3 class="text-lg font-semibold">{{ benefit.title }}</h3>
+                               <p class="text-sm text-gray-500">{{ benefit.description }}</p>
+                           </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-8 rounded-xl border border-gray-200">
+                             <h2 class="text-2xl font-bold mb-6 text-center">Unverbindliche Anfrage stellen</h2>
+                             <form class="space-y-6">
+                               <div class="grid md:grid-cols-2 gap-6">
+                                 <input type="text" placeholder="Firma / Name*" class="form-input">
+                                 <input type="email" placeholder="E-Mail*" class="form-input">
+                               </div>
+                               <input type="tel" placeholder="Telefon (optional)" class="form-input">
+                               <input type="number" placeholder="Geschätzte Stückzahl*" class="form-input">
+                               <textarea placeholder="Ihre Nachricht an uns..." rows="5" class="form-input"></textarea>
+                               <div>
+                                 <label class="block mb-2 text-sm font-medium text-gray-700">Design hochladen (optional)</label>
+                                 <input type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+                               </div>
+                               <div class="text-center">
+                                 <button type="submit" class="btn btn-primary btn-lg">Anfrage senden</button>
+                               </div>
+                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+               <!-- Store Locations Section -->
           <section class="py-16 sm:py-24 bg-gray-50">
             <div class="container mx-auto px-6 text-center">
               <!-- New Pin Needle SVG -->
@@ -754,49 +918,6 @@
               </div>
             </div>
           </section>
-
-          <!-- GROSSBESTELLUNG PAGE (/pages/grossbestellung.vue) -->
-          <div v-if="currentPage === 'Grossbestellung'">
-            <div class="bg-white">
-                <div class="container mx-auto px-6 py-16">
-                    <div class="max-w-4xl mx-auto">
-                        <h1 class="text-4xl font-bold text-center mb-4">Großbestellungen für Ihr Business</h1>
-                        <p class="text-xl text-gray-600 text-center mb-12">Perfekt für Firmen, Vereine, Events und Merchandise.</p>
-
-                        <div class="grid md:grid-cols-3 gap-8 text-center mb-16">
-                           <div v-for="benefit in b2bBenefits" :key="benefit.title" class="p-4">
-                               <div class="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 text-indigo-600 mx-auto mb-4">
-                                  <svg v-html="benefit.icon" class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
-                               </div>
-                               <h3 class="text-lg font-semibold">{{ benefit.title }}</h3>
-                               <p class="text-sm text-gray-500">{{ benefit.description }}</p>
-                           </div>
-                        </div>
-
-                        <div class="bg-gray-50 p-8 rounded-xl border border-gray-200">
-                             <h2 class="text-2xl font-bold mb-6 text-center">Unverbindliche Anfrage stellen</h2>
-                             <form class="space-y-6">
-                               <div class="grid md:grid-cols-2 gap-6">
-                                 <input type="text" placeholder="Firma / Name*" class="form-input">
-                                 <input type="email" placeholder="E-Mail*" class="form-input">
-                               </div>
-                               <input type="tel" placeholder="Telefon (optional)" class="form-input">
-                               <input type="number" placeholder="Geschätzte Stückzahl*" class="form-input">
-                               <textarea placeholder="Ihre Nachricht an uns..." rows="5" class="form-input"></textarea>
-                               <div>
-                                 <label class="block mb-2 text-sm font-medium text-gray-700">Design hochladen (optional)</label>
-                                 <input type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
-                               </div>
-                               <div class="text-center">
-                                 <button type="submit" class="btn btn-primary btn-lg">Anfrage senden</button>
-                               </div>
-                             </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-          </div>
-            
           <!-- OTHER PAGES (Placeholders) -->
           <div v-if="!['Home', 'ReadyToBuy', 'CustomizationCreator', 'Grossbestellung'].includes(currentPage)">
               <div class="container mx-auto px-6 py-24 text-center">
@@ -948,13 +1069,11 @@
                 <!-- Cart Tabs -->
                 <div class="flex border-b mb-4">
                   <button 
-                    v-for="tab in ['Warenkorb', 'Gespeichert', 'Kürzlich angesehen']" 
-                    :key="tab"
                     class="px-4 py-2 border-b-2"
-                    :class="activeCartTab === tab ? 'border-[#D8127D] text-[#D8127D]' : 'border-transparent'"
-                    @click="activeCartTab = tab"
+                    :class="activeCartTab === 'Warenkorb' ? 'border-[#D8127D] text-[#D8127D]' : 'border-transparent'"
+                    @click="activeCartTab = 'Warenkorb'"
                   >
-                    {{ tab }}
+                    Warenkorb
                   </button>
                 </div>
 
@@ -1039,19 +1158,11 @@
                 </div>
 
                 <!-- Empty States -->
-                <div v-if="
-                  (activeCartTab === 'Warenkorb' && cart.length === 0) ||
-                  (activeCartTab === 'Gespeichert' && savedForLater.length === 0) ||
-                  (activeCartTab === 'Kürzlich angesehen' && recentlyViewed.length === 0)
-                " class="text-center py-8">
+                <div v-if="activeCartTab === 'Warenkorb' && cart.length === 0" class="text-center py-8">
                   <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                   </svg>
-                  <p class="text-gray-500">
-                    {{ activeCartTab === 'Warenkorb' ? 'Ihr Warenkorb ist leer' :
-                       activeCartTab === 'Gespeichert' ? 'Keine gespeicherten Artikel' :
-                       'Keine kürzlich angesehenen Artikel' }}
-                  </p>
+                  <p class="text-gray-500">Ihr Warenkorb ist leer</p>
                 </div>
 
                 <!-- Cart Summary -->
@@ -1093,7 +1204,7 @@
     </main>
 
     <!-- Footer (/layouts/default.vue) -->
-    <footer class="bg-gray-900 text-white">
+    <footer class="bg-[#D8127D] text-white">
         <div class="container mx-auto px-6 py-12">
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                 <div class="col-span-2 md:col-span-4 lg:col-span-1 mb-6 lg:mb-0">
@@ -1101,44 +1212,44 @@
                          alt="private-shirt.de Logo" 
                          class="h-8 mb-4"
                          @error="handleLogoError">
-                    <p class="text-gray-400 text-sm">Dein Druck. Deine Idee. Dein Shirt.</p>
+                    <p class="text-white text-sm opacity-80">Dein Druck. Deine Idee. Dein Shirt.</p>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-3">Shop</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link">T-Shirts</a></li>
-                        <li><a href="#" class="footer-link">Hoodies</a></li>
-                        <li><a href="#" class="footer-link">Tassen</a></li>
-                        <li><a href="#" class="footer-link">Accessoires</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">T-Shirts</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Hoodies</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Tassen</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Accessoires</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-3">Service</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link">Großbestellungen</a></li>
-                        <li><a href="#" class="footer-link">Hilfe & FAQ</a></li>
-                        <li><a href="#" class="footer-link">Kontakt</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Großbestellungen</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Hilfe & FAQ</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Kontakt</a></li>
                     </ul>
                 </div>
                  <div>
                     <h4 class="font-semibold mb-3">Unternehmen</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link">Über uns</a></li>
-                        <li><a href="#" class="footer-link">Jobs</a></li>
-                        <li><a href="#" class="footer-link">Nachhaltigkeit</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Über uns</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Jobs</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Nachhaltigkeit</a></li>
                     </ul>
                 </div>
                  <div>
                     <h4 class="font-semibold mb-3">Legal</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link">Impressum</a></li>
-                        <li><a href="#" class="footer-link">Datenschutz</a></li>
-                        <li><a href="#" class="footer-link">AGB</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Impressum</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Datenschutz</a></li>
+                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">AGB</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="mt-12 border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">&copy; {{ new Date().getFullYear() }} private-shirt.de. Alle Rechte vorbehalten.</p>
+            <div class="mt-12 border-t border-[#ffd44d] pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-sm text-white opacity-80">&copy; {{ new Date().getFullYear() }} private-shirt.de. Alle Rechte vorbehalten.</p>
                 <div class="flex space-x-4 mt-4 md:mt-0">
                     <!-- Trust Logos Placeholder -->
                     <span class="text-xs">VISA</span>
@@ -1202,6 +1313,15 @@ const selectedSize = ref(null)
 const selectedColor = ref(null)
 const quantity = ref(1)
 const selectedTab = ref('Beschreibung')
+// Multi-size quantity selector state
+const sizeQuantities = ref({})
+watch(selectedProduct, (newProduct) => {
+  if (newProduct && newProduct.sizes) {
+    const initial = {}
+    newProduct.sizes.forEach(size => { initial[size] = 0 })
+    sizeQuantities.value = initial
+  }
+})
 
 // Pagination
 const currentPageNumber = ref(1)
@@ -1312,16 +1432,16 @@ const wooService = {
     }
   },
 
-  async fetchProducts(params = {}) {
-    try {
+  async fetchAllProducts(params = {}) {
+    let allProducts = [];
+    let page = 1;
+    let totalPages = 1;
+    do {
       const queryParams = new URLSearchParams({
-        per_page: itemsPerPage.value,
-        page: currentPageNumber.value,
-        search: debouncedSearchQuery.value,
-        orderby: sortBy.value,
+        per_page: 100, // max allowed by WooCommerce
+        page,
         ...params
       }).toString();
-
       const response = await fetch(
         `${WOO_CONFIG.baseUrl}/products?${queryParams}`,
         {
@@ -1331,15 +1451,12 @@ const wooService = {
         }
       );
       if (!response.ok) throw new Error('Failed to fetch products');
-      
-      // Get total products from headers
-      totalProducts.value = parseInt(response.headers.get('X-WP-Total')) || 0;
-      
-      return await response.json();
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      throw err;
-    }
+      const products = await response.json();
+      allProducts = allProducts.concat(products);
+      totalPages = parseInt(response.headers.get('X-WP-TotalPages')) || 1;
+      page++;
+    } while (page <= totalPages);
+    return allProducts;
   },
 
   async fetchProduct(id) {
@@ -1362,42 +1479,47 @@ const wooService = {
 };
 
 // Cart Methods
-const addToCart = (product, quantity = 1) => {
-  // If product requires size/color selection and none is selected, show error
-  if ((product.sizes?.length > 0 && !selectedSize.value) || 
-      (product.colors?.length > 0 && !selectedColor.value)) {
-    alert('Bitte wählen Sie Größe und Farbe aus.');
-    return;
-  }
-
-  const existingItem = cart.value.find(item => 
-    item.id === product.id && 
-    item.selectedSize === selectedSize.value && 
-    item.selectedColor === selectedColor.value
-  );
-
-  if (existingItem) {
-    existingItem.quantity += quantity;
+const addToCart = (product) => {
+  if (product.sizes?.length > 0) {
+    let added = false
+    for (const size of product.sizes) {
+      const qty = sizeQuantities.value[size]
+      if (qty > 0) {
+        cart.value.push({
+          ...product,
+          quantity: qty,
+          selectedSize: size,
+          selectedColor: selectedColor.value
+        })
+        added = true
+      }
+    }
+    if (!added) {
+      alert('Bitte wählen Sie mindestens eine Größe und Menge aus.')
+      return
+    }
+    // Reset
+    for (const size of product.sizes) sizeQuantities.value[size] = 0
+    selectedColor.value = null
+    alert('Produkte wurden zum Warenkorb hinzugefügt')
   } else {
+    // Single size logic (unchanged)
+    if (product.colors?.length > 0 && !selectedColor.value) {
+      alert('Bitte wählen Sie eine Farbe aus.')
+      return
+    }
     cart.value.push({
       ...product,
-      quantity,
-      selectedSize: selectedSize.value,
+      quantity: quantity.value,
+      selectedSize: null,
       selectedColor: selectedColor.value
-    });
+    })
+    quantity.value = 1
+    selectedColor.value = null
+    alert('Produkt wurde zum Warenkorb hinzugefügt')
   }
-  
-  // Save cart to localStorage
-  localStorage.setItem('cart', JSON.stringify(cart.value));
-  
-  // Show success message
-  alert('Produkt wurde zum Warenkorb hinzugefügt');
-  
-  // Reset selections
-  selectedSize.value = null;
-  selectedColor.value = null;
-  quantity.value = 1;
-};
+  localStorage.setItem('cart', JSON.stringify(cart.value))
+}
 
 const addCustomDesignToCart = ({ image, price }) => {
   cart.value.push({
@@ -1446,7 +1568,6 @@ const totalPages = computed(() => {
 const initializeData = async () => {
   try {
     isLoading.value = true;
-    
     // Fetch categories
     const wooCategories = await wooService.fetchCategories();
     categories.value = [
@@ -1458,9 +1579,9 @@ const initializeData = async () => {
       }))
     ];
 
-    // Fetch products
-    const products = await wooService.fetchProducts();
-    
+    // Fetch all products
+    const products = await wooService.fetchAllProducts();
+    totalProducts.value = products.length;
     // Separate products into ready-to-buy and customizable
     readyToBuyProducts.value = products
       .filter(product => !product.meta_data?.some(meta => meta.key === '_customizable' && meta.value === 'yes'))
@@ -1500,7 +1621,8 @@ const formatProduct = (product) => {
     stock_quantity: product.stock_quantity,
     sku: product.sku,
     weight: product.weight,
-    dimensions: product.dimensions
+    dimensions: product.dimensions,
+    tags: product.tags?.map(tag => tag.slug) || [] // <-- Add tags as array of slugs
   };
 };
 
@@ -1686,12 +1808,18 @@ const freeShippingProgress = computed(() => {
 // Bestseller Carousel State
 const productsPerSlide = ref(4);
 const currentBestsellerPage = ref(0);
-
-// Computed property for paginated bestsellers
+const currentSummerPage = ref(0);
+const bestsellerProducts = computed(() => readyToBuyProducts.value.filter(p => p.tags.includes('bestseller')));
+const summerProducts = computed(() => readyToBuyProducts.value.filter(p => p.tags.includes('summer')));
 const paginatedBestsellers = computed(() => {
   const start = currentBestsellerPage.value * productsPerSlide.value;
   const end = start + productsPerSlide.value;
-  return readyToBuyProducts.value.slice(0, 12).slice(start, end);
+  return bestsellerProducts.value.slice(start, end);
+});
+const paginatedSummerProducts = computed(() => {
+  const start = currentSummerPage.value * productsPerSlide.value;
+  const end = start + productsPerSlide.value;
+  return summerProducts.value.slice(start, end);
 });
 
 // Carousel Navigation Methods
@@ -1707,14 +1835,6 @@ const prevBestsellerPage = () => {
     currentBestsellerPage.value--;
   }
 };
-
-// Bereit für den Sommer Section
-const currentSummerPage = ref(0);
-const paginatedSummerProducts = computed(() => {
-  const start = currentSummerPage.value * productsPerSlide.value;
-  const end = start + productsPerSlide.value;
-  return readyToBuyProducts.value.slice(4, 8).slice(start, end);
-});
 
 const nextSummerPage = () => {
   const maxPage = Math.ceil(readyToBuyProducts.value.slice(4, 8).length / productsPerSlide.value) - 1;
@@ -1765,6 +1885,24 @@ const handleB2BAndCreatorCTA = () => {
   console.log('B2B and Creator CTA clicked');
 };
 
+// Submenu hover state
+const fertigeProdukteHover = ref(false)
+const submenuCategories = [
+  { name: 'Männer', id: 'maenner' },
+  { name: 'Frauen', id: 'frauen' },
+  { name: 'Kinder', id: 'kinder' },
+  { name: 'Accessoires', id: 'accessoires' },
+  { name: 'Arbeitskleidung', id: 'arbeitskleidung' }
+]
+
+const totalSelectedQuantity = computed(() => {
+  if (!selectedProduct.value?.sizes) return quantity.value
+  return Object.values(sizeQuantities.value).reduce((sum, n) => sum + n, 0)
+})
+const totalSelectedPrice = computed(() => {
+  return totalSelectedQuantity.value * (parseFloat(selectedProduct.value?.price) || 0)
+})
+
 </script>
 
 <style>
@@ -1793,7 +1931,7 @@ body {
   @apply bg-[#D8127D] text-white hover:bg-[#b30f68] focus:ring-[#D8127D];
 }
 .btn-secondary {
-  @apply bg-gray-700 text-white hover:bg-gray-800 focus:ring-gray-600;
+  @apply bg-[#D8127D] text-white hover:bg-[#b30f68] focus:ring-[#b30f68];
 }
 .btn-primary-inverted {
    @apply bg-white text-[#D8127D] hover:bg-pink-50 focus:ring-[#D8127D];
@@ -1928,5 +2066,11 @@ svg {
 .slide-enter-to, .slide-leave-from {
   opacity: 1;
   transform: translateX(0);
+}
+
+/* Top notification bar styles */
+.bg-gray-900.text-white.text-center.py-2.text-sm.font-medium.overflow-hidden.relative.h-8 {
+  background-color: #D8127D !important;
+  color: #fff !important;
 }
 </style>

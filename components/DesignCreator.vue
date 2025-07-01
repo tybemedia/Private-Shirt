@@ -1,408 +1,90 @@
 <template>
   <div class="container mx-auto px-6 py-12">
-    <div class="max-w-6xl mx-auto">
-      <h1 class="text-3xl font-bold mb-8">Designer</h1>
-      
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <!-- Tools Sidebar -->
-        <div class="lg:col-span-1 space-y-6">
-          <div class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="font-semibold mb-4">Werkzeuge</h2>
-            <div class="space-y-2">
-              <button
-                v-for="tool in ['text', 'image', 'pattern', 'shape']"
-                :key="tool"
-                @click="selectedTool = tool"
-                :class="['w-full p-2 rounded', selectedTool === tool ? 'bg-[#D8127D] text-white' : 'bg-gray-100']"
-              >
-                {{ tool.charAt(0).toUpperCase() + tool.slice(1) }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Text Options -->
-          <div v-if="selectedTool === 'text'" class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="font-semibold mb-4">Text Optionen</h2>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Farbe</label>
-                <input type="color" v-model="textColor" class="w-full h-10">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Größe</label>
-                <input type="range" v-model="fontSize" min="8" max="72" class="w-full">
-                <span class="text-sm text-gray-500">{{ fontSize }}px</span>
-              </div>
-              <button @click="addText" class="btn bg-[#D8127D] text-white w-full">
-                Text hinzufügen
-              </button>
-            </div>
-          </div>
-
-          <!-- Image Upload -->
-          <div v-if="selectedTool === 'image'" class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="font-semibold mb-4">Bild hochladen</h2>
-            <input 
-              type="file" 
-              accept="image/*" 
-              @change="handleImageUpload"
-              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#D8127D] file:text-white hover:file:bg-[#b30f68]"
-            >
-          </div>
-
-          <!-- Pattern Options -->
-          <div v-if="selectedTool === 'pattern'" class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="font-semibold mb-4">Muster</h2>
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                v-for="p in patterns"
-                :key="p.name"
-                @click="applyPattern(p.name)"
-                :style="{ backgroundImage: p.preview, backgroundSize: '20px 20px' }"
-                class="h-12 w-full rounded border"
-              ></button>
-            </div>
-          </div>
-
-          <!-- Shape Options -->
-          <div v-if="selectedTool === 'shape'" class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="font-semibold mb-4">Formen</h2>
-            <div class="space-y-2">
-              <button 
-                v-for="shape in ['rect', 'circle', 'triangle']" 
-                :key="shape"
-                @click="addShape(shape)"
-                class="w-full p-2 bg-gray-100 rounded hover:bg-gray-200"
-              >
-                {{ shape.charAt(0).toUpperCase() + shape.slice(1) }}
-              </button>
-            </div>
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8">
+      <!-- Thumbnails -->
+      <div class="hidden md:flex flex-col space-y-4 md:col-span-2">
+        <img v-for="(thumb, i) in thumbnails" :key="i" :src="thumb" alt="T-Shirt Ansicht" class="w-full rounded-lg border cursor-pointer hover:border-[#D8127D]" :class="{'border-[#D8127D]': selectedThumb === i, 'border-gray-200': selectedThumb !== i}" @click="selectedThumb = i" />
+      </div>
+      <!-- Main Product Image -->
+      <div class="md:col-span-6 flex items-center justify-center">
+        <img :src="thumbnails[selectedThumb]" alt="Produktbild" class="w-full max-w-md rounded-lg shadow-lg object-contain bg-white" />
+      </div>
+      <!-- Sidebar -->
+      <div class="md:col-span-4 bg-white rounded-xl shadow-lg p-6 flex flex-col gap-6">
+        <div>
+          <h1 class="text-2xl font-bold mb-1">Unisex Basic T-Shirt <span class="text-xs text-gray-400">#E150</span></h1>
+          <div class="text-sm text-[#D8127D] font-semibold mb-2 flex items-center gap-2">
+            <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M12 12a4 4 0 01-4-4V4a4 4 0 018 0v4a4 4 0 01-4 4z"/></svg>
+            Partner-Artikel: <span class="text-gray-600">Frauen | Kinder | Teenager | Übergrößen</span>
           </div>
         </div>
-
-        <!-- Canvas -->
-        <div class="lg:col-span-2">
-          <div class="bg-white p-4 rounded-lg shadow-md">
-            <canvas ref="canvas" id="creator-canvas"></canvas>
+        <!-- Color Swatches -->
+        <div>
+          <div class="font-semibold mb-2">Produktfabe</div>
+          <div class="grid grid-cols-8 gap-2 mb-2">
+            <button v-for="(color, i) in colors" :key="color.name" :title="color.name" @click="selectedColor = i" :class="['w-7 h-7 rounded-full border-2', selectedColor === i ? 'border-[#D8127D] ring-2 ring-[#ffd44d]' : 'border-gray-200']" :style="{backgroundColor: color.hex}"></button>
           </div>
+          <div class="text-xs text-gray-500">Gewählte Farbe: <span class="font-semibold text-[#0a3a47]">{{ colors[selectedColor].name }}</span></div>
         </div>
-
-        <!-- Preview & Actions -->
-        <div class="lg:col-span-1 space-y-6">
-          <div class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="font-semibold mb-4">Vorschau</h2>
-            <div class="aspect-square bg-gray-100 rounded-lg mb-4">
-              <!-- Preview will be rendered here -->
-            </div>
-            <div class="space-y-4">
-              <button @click="clearCanvas" class="btn border-2 border-gray-300 w-full">
-                Neu starten
-              </button>
-              <button @click="saveDesign" class="btn bg-[#D8127D] text-white w-full">
-                Design speichern
-              </button>
-              <button @click="addToCart" class="btn bg-green-600 text-white w-full">
-                In den Warenkorb
-              </button>
-            </div>
-          </div>
-
-          <!-- Object Properties -->
-          <div v-if="selectedObject" class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="font-semibold mb-4">Eigenschaften</h2>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Farbe</label>
-                <input 
-                  type="color" 
-                  v-model="textColor" 
-                  @input="selectedObject.set('fill', textColor)"
-                  class="w-full h-10"
-                >
-              </div>
-              <div v-if="selectedObject.type === 'i-text'">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Größe</label>
-                <input 
-                  type="range" 
-                  v-model="fontSize" 
-                  min="8" 
-                  max="72" 
-                  @input="selectedObject.set('fontSize', fontSize)"
-                  class="w-full"
-                >
-                <span class="text-sm text-gray-500">{{ fontSize }}px</span>
-              </div>
-            </div>
-          </div>
+        <!-- Product Info -->
+        <div>
+          <details class="mb-2">
+            <summary class="cursor-pointer font-semibold text-[#D8127D]">Produktinformationen</summary>
+            <div class="text-xs text-gray-600 mt-2">100% Baumwolle, Regular Fit, B&C Collection, waschbar bis 40°C, Unisex.</div>
+          </details>
+          <details>
+            <summary class="cursor-pointer font-semibold text-[#D8127D]">Aktueller Lagerbestand</summary>
+            <div class="text-xs text-gray-600 mt-2">Viele Größen und Farben sofort verfügbar.</div>
+          </details>
         </div>
+        <!-- Price & Delivery -->
+        <div class="bg-gray-50 rounded-lg p-4 flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-[#0a3a47]">Gesamtsumme</span>
+            <span class="text-lg font-bold text-[#D8127D]">11,90 €</span>
+          </div>
+          <div class="text-xs text-gray-500">inkl. MwSt. EU / inkl. Druckkosten / zzgl. <a href="#" class="underline text-[#D8127D]">Versand</a></div>
+          <div class="text-sm text-[#0a3a47] font-semibold mt-2">Lieferung in der Regel innerhalb von 4 Werktagen</div>
+        </div>
+        <!-- Action Button -->
+        <button class="btn w-full bg-[#ff7a00] hover:bg-[#ffa940] text-white text-lg font-bold py-3 rounded-lg mt-2">Größe und Menge wählen</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import 'fabric';
-const fabric = window.fabric;
-const emit = defineEmits(['add-to-cart']);
-
-const canvas = ref(null);
-const selectedTool = ref('text');
-const textColor = ref('#000000');
-const fontSize = ref(40);
-const fontFamily = ref('Arial');
-const textContent = ref('');
-const uploadedImage = ref(null);
-const selectedObject = ref(null);
-const history = ref([]);
-const historyIndex = ref(-1);
-const designPrice = 19.99;
-
-const patterns = [
-  {
-    name: 'stripes',
-    preview: 'repeating-linear-gradient(45deg,#eee 0px,#eee 10px,#fff 10px,#fff 20px)'
-  },
-  {
-    name: 'dots',
-    preview: 'radial-gradient(#ccc 1px,transparent 1px)',
-  },
-  {
-    name: 'grid',
-    preview: 'repeating-linear-gradient(#ccc 0 2px,transparent 2px 20px),repeating-linear-gradient(90deg,#ccc 0 2px,transparent 2px 20px)'
-  }
-];
-
-let fabricCanvas = null;
-
-onMounted(() => {
-  initCanvas();
-  window.addEventListener('keydown', handleKeyDown);
-});
-
-onUnmounted(() => {
-  if (fabricCanvas) {
-    fabricCanvas.dispose();
-  }
-  window.removeEventListener('keydown', handleKeyDown);
-});
-
-const initCanvas = async () => {
-  await nextTick();
-  if (canvas.value) {
-    fabricCanvas = new fabric.Canvas('creator-canvas', {
-      width: 500,
-      height: 500,
-      backgroundColor: '#ffffff'
-    });
-
-    // Add event listeners
-    fabricCanvas.on('selection:created', handleSelection);
-    fabricCanvas.on('selection:updated', handleSelection);
-    fabricCanvas.on('selection:cleared', () => {
-      selectedObject.value = null;
-    });
-
-    // Add history tracking
-    fabricCanvas.on('object:modified', saveToHistory);
-    fabricCanvas.on('object:added', saveToHistory);
-    fabricCanvas.on('object:removed', saveToHistory);
-  }
-};
-
-const handleSelection = (e) => {
-  selectedObject.value = e.selected[0];
-};
-
-const handleKeyDown = (e) => {
-  if (!fabricCanvas) return;
-
-  // Delete selected object
-  if (e.key === 'Delete' && selectedObject.value) {
-    fabricCanvas.remove(selectedObject.value);
-    saveToHistory();
-  }
-
-  // Undo/Redo
-  if (e.ctrlKey || e.metaKey) {
-    if (e.key === 'z') {
-      e.preventDefault();
-      if (e.shiftKey) {
-        redo();
-      } else {
-        undo();
-      }
-    }
-  }
-};
-
-const saveToHistory = () => {
-  const json = fabricCanvas.toJSON();
-  history.value = history.value.slice(0, historyIndex.value + 1);
-  history.value.push(json);
-  historyIndex.value = history.value.length - 1;
-};
-
-const undo = () => {
-  if (historyIndex.value > 0) {
-    historyIndex.value--;
-    fabricCanvas.loadFromJSON(history.value[historyIndex.value], () => {
-      fabricCanvas.renderAll();
-    });
-  }
-};
-
-const redo = () => {
-  if (historyIndex.value < history.value.length - 1) {
-    historyIndex.value++;
-    fabricCanvas.loadFromJSON(history.value[historyIndex.value], () => {
-      fabricCanvas.renderAll();
-    });
-  }
-};
-
-const addText = () => {
-  if (!textContent.value || !fabricCanvas) return;
-  
-  const text = new fabric.Text(textContent.value, {
-    left: 100,
-    top: 100,
-    fontFamily: fontFamily.value,
-    fontSize: fontSize.value,
-    fill: textColor.value
-  });
-  
-  fabricCanvas.add(text);
-  fabricCanvas.setActiveObject(text);
-  textContent.value = '';
-  saveToHistory();
-};
-
-const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (!file || !fabricCanvas) return;
-  
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    fabric.Image.fromURL(e.target.result, (img) => {
-      img.scaleToWidth(200);
-      fabricCanvas.add(img);
-      fabricCanvas.setActiveObject(img);
-      saveToHistory();
-    });
-  };
-  reader.readAsDataURL(file);
-};
-
-const clearCanvas = () => {
-  fabricCanvas.clear();
-  fabricCanvas.backgroundColor = '#ffffff';
-  saveToHistory();
-};
-
-const applyPattern = (type) => {
-  if (!fabricCanvas) return;
-  const patternCanvas = document.createElement('canvas');
-  patternCanvas.width = patternCanvas.height = 20;
-  const ctx = patternCanvas.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, 20, 20);
-  switch (type) {
-    case 'stripes':
-      ctx.fillStyle = '#e5e5e5';
-      ctx.fillRect(0, 0, 20, 10);
-      break;
-    case 'dots':
-      ctx.fillStyle = '#ccc';
-      ctx.beginPath();
-      ctx.arc(10, 10, 3, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    case 'grid':
-      ctx.strokeStyle = '#ccc';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(10, 0);
-      ctx.lineTo(10, 20);
-      ctx.moveTo(0, 10);
-      ctx.lineTo(20, 10);
-      ctx.stroke();
-      break;
-  }
-  const pattern = new fabric.Pattern({ source: patternCanvas, repeat: 'repeat' });
-  fabricCanvas.setBackgroundColor(pattern, fabricCanvas.renderAll.bind(fabricCanvas));
-  saveToHistory();
-};
-
-const addToCart = () => {
-  if (!fabricCanvas) return;
-  const dataURL = fabricCanvas.toDataURL({ format: 'png', quality: 1 });
-  emit('add-to-cart', { image: dataURL, price: designPrice });
-};
-
-const saveDesign = () => {
-  if (!fabricCanvas) return;
-  const dataURL = fabricCanvas.toDataURL({
-    format: 'png',
-    quality: 1
-  });
-  // Here you would typically save to your backend
-  console.log('Design saved:', dataURL);
-  
-  // Create a download link
-  const link = document.createElement('a');
-  link.download = 'design.png';
-  link.href = dataURL;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
-// Add shape functionality
-const addShape = (type) => {
-  let shape;
-  switch (type) {
-    case 'rect':
-      shape = new fabric.Rect({
-        left: 100,
-        top: 100,
-        width: 100,
-        height: 100,
-        fill: textColor.value
-      });
-      break;
-    case 'circle':
-      shape = new fabric.Circle({
-        left: 100,
-        top: 100,
-        radius: 50,
-        fill: textColor.value
-      });
-      break;
-    case 'triangle':
-      shape = new fabric.Triangle({
-        left: 100,
-        top: 100,
-        width: 100,
-        height: 100,
-        fill: textColor.value
-      });
-      break;
-  }
-  if (shape) {
-    fabricCanvas.add(shape);
-    fabricCanvas.setActiveObject(shape);
-    saveToHistory();
-  }
-};
+import { ref } from 'vue'
+const thumbnails = [
+  'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=400&q=80',
+  'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=400&q=80',
+]
+const selectedThumb = ref(0)
+const colors = [
+  { name: 'Weiß', hex: '#f5f5f5' },
+  { name: 'Schwarz', hex: '#222' },
+  { name: 'Atoll', hex: '#1cc6ea' },
+  { name: 'Gelb', hex: '#ffe600' },
+  { name: 'Pink', hex: '#D8127D' },
+  { name: 'Grün', hex: '#6bbf59' },
+  { name: 'Rot', hex: '#e53935' },
+  { name: 'Blau', hex: '#1976d2' },
+  { name: 'Grau', hex: '#bdbdbd' },
+  { name: 'Navy', hex: '#0a3a47' },
+  { name: 'Orange', hex: '#ff7a00' },
+  { name: 'Lila', hex: '#8e24aa' },
+  { name: 'Beige', hex: '#f5e9da' },
+  { name: 'Oliv', hex: '#808000' },
+  { name: 'Bordeaux', hex: '#800020' },
+  { name: 'Türkis', hex: '#30d5c8' },
+]
+const selectedColor = ref(2)
 </script>
 
 <style scoped>
-#creator-canvas {
-  width: 100% !important;
-  height: 500px !important;
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+.btn {
+  @apply transition font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2;
 }
 </style> 
