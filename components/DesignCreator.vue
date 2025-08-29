@@ -27,13 +27,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
               </button>
-              <button @click="testCanvas" class="btn-secondary" title="Test Canvas">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </button>
-              
-
+            
               <!-- Admin Controls simplified: single polygon button + save/clear -->
               <div class="relative group" v-if="isAdminMode">
                 <button @click="handlePolygonButton" class="btn-secondary" :class="{'bg-[#0a3a47] text-white': isDrawingPolygon || isEditingArea}" :title="polygonButtonTitle">
@@ -109,16 +103,12 @@
           <div>
             <h1 class="text-2xl font-bold mb-1">{{ productName }} <span class="text-xs text-gray-400">#{{ productId }}</span></h1>
             <div class="text-sm text-[#D8127D] font-semibold mb-2 flex items-center gap-2">
-              <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M12 12a4 4 0 01-4-4V4a4 4 0 018 0v4a4 4 0 01-4 4z"/>
-              </svg>
-              Partner-Artikel: <span class="text-gray-600">Frauen | Kinder | Teenager | Übergrößen</span>
+            
             </div>
           </div>
 
           <!-- Upload Section -->
           <div>
-            <h3 class="font-semibold mb-3 text-[#0a3a47]">Design hinzufügen</h3>
             <div class="space-y-3">
               <button @click="openFileInput" class="btn w-full bg-[#D8127D] hover:bg-[#b0105f] text-white">
                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,33 +123,22 @@
                 </svg>
                 Text hinzufügen
               </button>
-              <button @click="testCanvas" class="btn w-full bg-gray-600 hover:bg-gray-700 text-white">
-                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Test Canvas (Red Rectangle)
+            
+            </div>
+          </div>
+
+          <!-- Product Views (thumbnails) -->
+          <div v-if="productImages && productImages.length" class="mt-4">
+            <h3 class="font-semibold mb-2 text-[#0a3a47]">Ansichten</h3>
+            <div class="flex gap-2 overflow-x-auto pb-2">
+              <button v-for="(u, i) in productImages" :key="u" @click="currentViewIndex = i"
+                      :class="['rounded-md border', i === currentViewIndex ? 'ring-2 ring-[#D8127D] border-[#D8127D]' : 'border-gray-200']">
+                <img :src="u" :alt="'View ' + (i+1)" class="w-16 h-16 object-cover rounded-md" />
               </button>
             </div>
           </div>
 
-          <!-- Templates -->
-          <div>
-            <h3 class="font-semibold mb-3 text-[#0a3a47]">Vorlagen</h3>
-            <div class="grid grid-cols-2 gap-2">
-              <button @click="addSampleText" class="btn-secondary text-xs">
-                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-                Text Vorlage
-              </button>
-              <button @click="addSampleLogo" class="btn-secondary text-xs">
-                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                </svg>
-                Logo Vorlage
-              </button>
-            </div>
-          </div>
+
 
           
 
@@ -198,7 +177,7 @@
               </div>
 
               <!-- Text Controls -->
-              <div v-if="selectedObject.type === 'text'" class="space-y-3">
+              <div v-if="selectedObject.type === 'text'" class="space-y-3 p-3 border border-gray-200 rounded-md bg-white shadow-sm">
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1">Text</label>
                   <input v-model="selectedObject.text" @input="updateText" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#D8127D]" />
@@ -220,6 +199,12 @@
                       :title="color.name"
                     ></button>
                   </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Schriftart</label>
+                  <select v-model="selectedObject.fontFamily" @change="updateText" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#D8127D]">
+                    <option v-for="f in availableFonts" :key="f" :value="f">{{ f }}</option>
+                  </select>
                 </div>
               </div>
 
@@ -256,10 +241,29 @@
             <div class="text-sm text-[#0a3a47] font-semibold mt-2">Lieferung in der Regel innerhalb von 4 Werktagen</div>
           </div>
 
-          <button class="btn w-full bg-[#ff7a00] hover:bg-[#ffa940] text-white text-lg font-bold py-3 rounded-lg mt-2">
+          <button @click="openSizeModal" class="btn w-full bg-[#ff7a00] hover:bg-[#ffa940] text-white text-lg font-bold py-3 rounded-lg mt-2">
             Größe und Menge wählen
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Size & Quantity Modal -->
+  <div v-if="showSizeModal" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40" @click="showSizeModal = false"></div>
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6">
+      <h3 class="text-lg font-semibold text-[#0a3a47] mb-4">Größe und Menge wählen</h3>
+      <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+        <div v-for="size in availableSizes" :key="size" class="flex items-center justify-between gap-4">
+          <div class="font-medium text-sm text-[#0a3a47]">{{ size }}</div>
+          <input type="number" min="0" step="1" class="w-24 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                 v-model.number="sizeQuantities[size]" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-6">
+        <button @click="showSizeModal = false" class="btn btn-secondary">Abbrechen</button>
+        <button @click="confirmSizesAndGoToCheckout" class="btn bg-[#ff7a00] hover:bg-[#ffa940] text-white">Weiter zur Kasse</button>
       </div>
     </div>
   </div>
@@ -267,7 +271,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useWooCommerce } from '~/composables/useWooCommerce.js'
+import { useCart } from '~/composables/useCart.js'
 
 const props = defineProps({
   productId: { type: [String, Number], default: 'E150' }
@@ -282,6 +288,14 @@ let fabric = null
 let designLayer = null
 let clipPolygon = null
 const lastValidTransform = new WeakMap()
+let bgImageObj = null
+const DEFAULT_BG_URL = ''
+const router = useRouter()
+const { addToCart } = useCart()
+const showSizeModal = ref(false)
+const sizeQuantities = ref({})
+
+
 
 // Admin/Polygon
 const isAdminMode = ref(false)
@@ -312,6 +326,37 @@ const hasDesign = ref(false)
 // Removed placement guide UI
 const showWarning = ref(false)
 const warningMessage = ref('')
+const availableSizes = computed(() => {
+  const sizes = ['S','M','L','XL','XXL']
+  if (Object.keys(sizeQuantities.value).length === 0) {
+    sizes.forEach(s => { sizeQuantities.value[s] = 0 })
+  }
+  return sizes
+})
+function openSizeModal() {
+  if (!selectedProduct.value) return
+  // ensure all common sizes are initialized
+  ;['S','M','L','XL','XXL'].forEach(s => {
+    if (typeof sizeQuantities.value[s] !== 'number') sizeQuantities.value[s] = 0
+  })
+  showSizeModal.value = true
+}
+function confirmSizesAndGoToCheckout() {
+  const entries = Object.entries(sizeQuantities.value).filter(([, q]) => Number(q) > 0)
+  if (!entries.length) { showSizeModal.value = false; return }
+  entries.forEach(([size, qty]) => {
+    addToCart({
+      id: selectedProduct.value?.id || props.productId,
+      name: selectedProduct.value?.name || 'Custom Produkt',
+      price: selectedProduct.value?.price || '0',
+      quantity: Number(qty),
+      selectedSize: size,
+      image: selectedProduct.value?.image
+    })
+  })
+  showSizeModal.value = false
+  router.push('/checkout')
+}
 
 // Helpers
 const ensureFabric = async () => {
@@ -328,7 +373,7 @@ const initCanvas = async () => {
   await ensureFabric()
 
   canvas = new fabric.Canvas(canvasRef.value, {
-    width: canvasRef.value.offsetWidth,
+    width: canvasRef.value.offsetWidth || 900,
     height: 600,
     backgroundColor: '#fff',
     selection: true,
@@ -337,7 +382,7 @@ const initCanvas = async () => {
   canvas.perPixelTargetFind = false
   canvas.targetFindTolerance = 10
 
-  await setShirtBackground()
+  // Background will be set after canvas is ready
 
   // Hinweis: Wir fügen Design-Objekte direkt zum Canvas hinzu
   designLayer = null
@@ -392,6 +437,11 @@ const initCanvas = async () => {
   canvas.on('object:rotating', (e) => validateAndMaybeRevert(e.target))
 
   setupDragAndDrop()
+  // Ensure product background loads after canvas is ready
+  await updateProductAndBackground(props.productId)
+  if (!bgImageObj) {
+    await setShirtBackground()
+  }
 }
 
 // Background (Mockup)
@@ -404,19 +454,15 @@ async function loadBackgroundViaFabric(url, useCors) {
       try {
         const scaleX = canvas.width / (img.width || 1)
         const scaleY = canvas.height / (img.height || 1)
-        canvas.setBackgroundImage(
-          img,
-          () => {
-            // Fallback: add as bottom layer if background didn’t take
-            if (!canvas.backgroundImage) {
-              img.set({ originX: 'left', originY: 'top', left: 0, top: 0, selectable: false, evented: false, scaleX, scaleY, name: 'BG_IMAGE' })
-              canvas.add(img)
-              canvas.sendToBack(img)
-            }
-            canvas.requestRenderAll()
-          },
-          { originX: 'left', originY: 'top', left: 0, top: 0, scaleX, scaleY }
-        )
+        const uniform = Math.min(scaleX, scaleY)
+        img.set({ originX: 'left', originY: 'top', left: 0, top: 0, selectable: false, evented: false, scaleX: uniform, scaleY: uniform, name: 'BG_IMAGE' })
+        if (bgImageObj) { try { canvas.remove(bgImageObj) } catch {} }
+        bgImageObj = img
+        canvas.add(bgImageObj)
+        if (typeof bgImageObj.sendToBack === 'function') { bgImageObj.sendToBack() }
+        // ensure user-added elements stay above background after swap
+        bringDesignObjectsToFront()
+        canvas.requestRenderAll()
         resolve(true)
       } catch (e) { reject(e) }
     }, options)
@@ -425,14 +471,14 @@ async function loadBackgroundViaFabric(url, useCors) {
 
 const setShirtBackground = async () => {
   const stored = (typeof window !== 'undefined' && window.localStorage) ? window.localStorage.getItem(`product:${props.productId}:image`) : null
-  const url = stored || 'https://png.pngtree.com/png-vector/20230902/ourmid/pngtree-black-t-shirt-mockup-hanging-realistic-t-shirt-png-image_9823288.png'
-  // Try with CORS first; if it fails, fallback without CORS so at least it displays
-  const okWithCors = await loadBackgroundViaFabric(url, true)
-  if (!okWithCors) await loadBackgroundViaFabric(url, false)
+  const url = stored || DEFAULT_BG_URL
+  await loadBackground(url)
 }
 
 // Product info
 const selectedProduct = ref(null)
+const productImages = ref([])
+const currentViewIndex = ref(0)
 const productName = computed(() => selectedProduct.value?.name || 'Unisex Basic T-Shirt')
 const productDescription = computed(() => {
   const raw = selectedProduct.value?.description || ''
@@ -461,6 +507,64 @@ async function loadBackgroundViaBlob(url) {
   }
 }
 
+async function loadViaHTMLImage(url) {
+  return new Promise((resolve) => {
+    if (!canvas) { resolve(false); return }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    try { img.referrerPolicy = 'no-referrer' } catch {}
+    img.onload = () => {
+      const scaleX = canvas.width / img.naturalWidth
+      const scaleY = canvas.height / img.naturalHeight
+      const uniform = Math.min(scaleX, scaleY)
+      const sw = img.naturalWidth * uniform
+      const sh = img.naturalHeight * uniform
+      const cx = (canvas.width - sw) / 2
+      const cy = (canvas.height - sh) / 2
+      const fImg = new fabric.Image(img, {
+        originX: 'left', originY: 'top', left: cx, top: cy,
+        scaleX: uniform, scaleY: uniform, name: 'BG_IMAGE', selectable: false, evented: false
+      })
+      canvas.backgroundImage = fImg
+      bringDesignObjectsToFront()
+      canvas.requestRenderAll()
+      resolve(true)
+    }
+    img.onerror = (e) => { console.warn('HTMLImage failed', e, url); resolve(false) }
+    img.src = url
+  })
+}
+
+async function loadBackground(url) {
+  if (!url) return false
+  // Prefer proxy first to avoid CORS entirely
+  const proxied = `/api/proxy?url=${encodeURIComponent(url)}`
+  let ok = await loadViaHTMLImage(proxied)
+  console.debug('[BG-TRY] proxy HTMLImage', proxied, ok)
+  if (ok) return true
+
+  ok = await loadBackgroundViaFabric(proxied, false)
+  console.debug('[BG-TRY] proxy Fabric', proxied, ok)
+  if (ok) return true
+
+  // Then try direct paths
+  ok = await loadViaHTMLImage(url)
+  console.debug('[BG-TRY] direct HTMLImage', url, ok)
+  if (ok) return true
+
+  ok = await loadBackgroundViaFabric(url, true)
+  console.debug('[BG-TRY] fabric CORS', url, ok)
+  if (ok) return true
+
+  ok = await loadBackgroundViaBlob(url)
+  console.debug('[BG-TRY] blob', url, ok)
+  if (ok) return true
+
+  ok = await loadBackgroundViaFabric(url, false)
+  console.debug('[BG-TRY] fabric no-cors (tainted)', url, ok)
+  return ok
+}
+
 async function updateProductAndBackground(id) {
   if (!id || !canvas) return
   try {
@@ -468,10 +572,14 @@ async function updateProductAndBackground(id) {
     selectedProduct.value = formatProduct(raw)
     const bg = pickImage(selectedProduct.value)
     console.debug('BG URL:', bg, selectedProduct.value)
+    // collect and set product images for view switching
+    const imgs = Array.isArray(raw?.images) ? raw.images.map((i) => i?.src).filter(Boolean) : (Array.isArray(selectedProduct.value?.gallery) ? selectedProduct.value.gallery : [])
+    if (Array.isArray(imgs) && imgs.length) {
+      productImages.value = imgs
+      currentViewIndex.value = 0
+    }
     if (bg) {
-      let ok = await loadBackgroundViaFabric(bg, true)
-      if (!ok) ok = await loadBackgroundViaBlob(bg)
-      if (!ok) ok = await loadBackgroundViaFabric(bg, false)
+      const ok = await loadBackground(bg)
       if (!ok) {
         showWarning.value = true
         warningMessage.value = 'Bild konnte nicht geladen werden. Prüfe CORS/Hotlink oder nutze die Proxy-Route.'
@@ -481,7 +589,12 @@ async function updateProductAndBackground(id) {
   } catch {}
 }
 
-watch(() => props.productId, (id) => { updateProductAndBackground(id) })
+watch(() => props.productId, (id) => id && updateProductAndBackground(id), { immediate: true })
+
+watch(currentViewIndex, async (idx) => {
+  const url = productImages.value?.[idx]
+  if (url) { await loadBackground(url) }
+})
 
 const addShirtOutline = () => {
   if (!fabric) return
@@ -583,32 +696,6 @@ const addText = async () => {
   addObjectToDesignLayer(text)
   updateObjectBorder(text)
 }
-const addSampleText = async () => {
-  const f = await ensureFabric()
-  const text = new f.Text('Sample Text', {
-    left: canvas.width / 2, top: canvas.height / 2,
-    fontSize: 30, fill: '#000', fontFamily: 'Arial',
-    originX: 'center', originY: 'center'
-  })
-  addObjectToDesignLayer(text)
-  updateObjectBorder(text)
-}
-const addSampleLogo = async () => {
-  const f = await ensureFabric()
-  const circle = new f.Circle({
-    left: canvas.width / 2, top: canvas.height / 2,
-    radius: 30, fill: '#D8127D', stroke: '#0a3a47', strokeWidth: 2,
-    originX: 'center', originY: 'center'
-  })
-  const text = new f.Text('LOGO', {
-    left: canvas.width / 2, top: canvas.height / 2,
-    fontSize: 12, fill: '#fff', fontWeight: 'bold',
-    originX: 'center', originY: 'center'
-  })
-  addObjectToDesignLayer(circle)
-  addObjectToDesignLayer(text)
-  updateObjectBorder(circle)
-}
 
 // Colors
 const changeShirtColor = (index) => {
@@ -629,6 +716,25 @@ const textColors = [
   { name: 'Grau', hex: '#666666' },
   { name: 'Navy', hex: '#0a3a47' },
   { name: 'Türkis', hex: '#30d5c8' },
+]
+
+// Common web-safe fonts for quick selection
+const availableFonts = [
+  'Arial',
+  'Helvetica',
+  'Times New Roman',
+  'Georgia',
+  'Courier New',
+  'Verdana',
+  'Tahoma',
+  'Trebuchet MS',
+  'Impact',
+  'Lucida Sans Unicode',
+  'Garamond',
+  'Palatino Linotype',
+  'Century Gothic',
+  'Calibri',
+  'Comic Sans MS'
 ]
 
 // ---------- Utility ----------
@@ -665,6 +771,7 @@ const onSelection = () => {
       text: active.text || '',
       fontSize: active.fontSize || 24,
       fill: active.fill || '#000000',
+      fontFamily: active.fontFamily || 'Arial',
       opacity: active.opacity || 1
     }
     rememberTransform(active)
@@ -679,10 +786,16 @@ const updateText = () => {
     active.set({
       text: selectedObject.value.text,
       fontSize: parseInt(selectedObject.value.fontSize),
-      fill: selectedObject.value.fill
+      fill: selectedObject.value.fill,
+      fontFamily: selectedObject.value.fontFamily
     })
     canvas.requestRenderAll()
   }
+}
+const changeTextColor = (hex) => {
+  if (!selectedObject.value) return
+  selectedObject.value.fill = hex
+  updateText()
 }
 const updateImage = () => {
   const active = canvas.getActiveObject()
@@ -817,11 +930,7 @@ const onKeyDown = (e) => {
   }
 }
 
-// Test
-const testCanvas = () => {
-  const rect = new fabric.Rect({ left: 100, top: 100, width: 100, height: 100, fill: 'red', stroke: 'black', strokeWidth: 2 })
-  addObjectToDesignLayer(rect)
-}
+
 
 // Simplified polygon controls
 const polygonButtonTitle = computed(() => {
@@ -1119,8 +1228,7 @@ function validateAndMaybeRevert(obj) {
     updateObjectBorder(obj)
     rememberTransform(obj)
   } else {
-    const last = lastValidTransform.get(obj)
-    if (last) { obj.set(last); obj.setCoords() }
+    // Allow movement outside polygon but show warning/border
     obj.set({ stroke: '#e53e3e', strokeWidth: 3 })
     showWarning.value = true
     warningMessage.value = 'Bitte innerhalb der Fläche platzieren.'

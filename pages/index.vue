@@ -40,22 +40,22 @@
           <button @click="$emit('navigate', 'ReadyToBuy')" class="text-sm text-gray-600 hover:text-[#D8127D]">Alle anzeigen</button>
         </div>
         <div class="relative">
-          <div class="overflow-hidden">
-            <transition-group name="slide" tag="div" class="flex">
+          <div class="overflow-visible">
+            <transition-group name="slide" tag="div" class="flex gap-6">
               <div v-for="product in paginatedBestsellers" 
                    :key="product.id" 
-                   class="bg-white rounded-lg shadow-md overflow-hidden group flex-shrink-0 box-border px-4"
+                   class="bg-white rounded-xl shadow-md hover:shadow-lg overflow-hidden group flex-shrink-0"
                    :style="{ width: `${100 / productsPerSlide}%` }">
                 <div class="relative h-72">
                   <img :src="product.image" :alt="product.name" class="w-full h-full object-cover"
                        @error="handleImageError($event, product.category)">
                   <div class="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <button @click.stop="$emit('navigate', 'ProductDetail'); $emit('selectProduct', product)" 
-                            class="btn bg-white text-gray-900">Details anzeigen</button>
+                            class="btn bg-white text-gray-900 shadow">Details anzeigen</button>
                   </div>
                 </div>
                 <div class="p-4">
-                  <h4 class="font-semibold">{{ product.name }}</h4>
+                  <h4 class="font-semibold truncate">{{ product.name }}</h4>
                   <p v-if="product.category || product.categoryLabel" class="text-gray-500 text-sm truncate">{{ product.categoryLabel || product.category }}</p>
                   <p class="text-[#D8127D] font-bold">{{ product.price }} €</p>
                 </div>
@@ -89,22 +89,22 @@
           <button @click="$emit('navigate', 'ReadyToBuy')" class="text-sm text-gray-600 hover:text-[#D8127D]">Alle anzeigen</button>
         </div>
         <div class="relative">
-          <div class="overflow-hidden">
-            <transition-group name="slide" tag="div" class="flex">
+          <div class="overflow-visible">
+            <transition-group name="slide" tag="div" class="flex gap-6">
               <div v-for="product in paginatedSummerProducts" 
                    :key="product.id" 
-                   class="bg-white rounded-lg shadow-md overflow-hidden group flex-shrink-0 box-border px-4"
+                   class="bg-white rounded-xl shadow-md hover:shadow-lg overflow-hidden group flex-shrink-0"
                    :style="{ width: `${100 / productsPerSlide}%` }">
                 <div class="relative h-72">
                   <img :src="product.image" :alt="product.name" class="w-full h-full object-cover"
                        @error="handleImageError($event, product.category)">
                   <div class="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <button @click.stop="$emit('navigate', 'ProductDetail'); $emit('selectProduct', product)" 
-                            class="btn bg-white text-gray-900">Details anzeigen</button>
+                            class="btn bg-white text-gray-900 shadow">Details anzeigen</button>
                   </div>
                 </div>
                 <div class="p-4">
-                  <h4 class="font-semibold">{{ product.name }}</h4>
+                  <h4 class="font-semibold truncate">{{ product.name }}</h4>
                   <p v-if="product.category || product.categoryLabel" class="text-gray-500 text-sm truncate">{{ product.categoryLabel || product.category }}</p>
                   <p class="text-[#D8127D] font-bold">{{ product.price }} €</p>
                 </div>
