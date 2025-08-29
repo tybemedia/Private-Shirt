@@ -332,7 +332,7 @@ const initCanvas = async () => {
     height: 600,
     backgroundColor: '#fff',
     selection: true,
-    preserveObjectStackingOrder: true
+    preserveObjectStacking: true
   })
   canvas.perPixelTargetFind = false
   canvas.targetFindTolerance = 10
@@ -439,6 +439,13 @@ const productDescription = computed(() => {
   try { return raw.replace(/<[^>]*>/g, '').trim() } catch { return raw }
 })
 
+function pickImage(product) {
+  const gal = (product && product.gallery) || []
+  const first = gal[0]
+  const galUrl = typeof first === 'string' ? first : (first && first.src)
+  return galUrl || product?.image || (product?.images && product.images[0]?.src) || null
+}
+
 const { wooService, formatProduct } = useWooCommerce()
 
 async function loadBackgroundViaBlob(url) {
@@ -459,11 +466,16 @@ async function updateProductAndBackground(id) {
   try {
     const raw = await wooService.fetchProduct(String(id))
     selectedProduct.value = formatProduct(raw)
-    const bg = selectedProduct.value.gallery?.[0] || selectedProduct.value.image
+    const bg = pickImage(selectedProduct.value)
+    console.debug('BG URL:', bg, selectedProduct.value)
     if (bg) {
       let ok = await loadBackgroundViaFabric(bg, true)
       if (!ok) ok = await loadBackgroundViaBlob(bg)
       if (!ok) ok = await loadBackgroundViaFabric(bg, false)
+      if (!ok) {
+        showWarning.value = true
+        warningMessage.value = 'Bild konnte nicht geladen werden. Prüfe CORS/Hotlink oder nutze die Proxy-Route.'
+      }
       try { if (typeof window !== 'undefined') window.localStorage.setItem(`product:${id}:image`, bg) } catch {}
     }
   } catch {}
