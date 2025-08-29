@@ -1,1201 +1,90 @@
 <template>
   <div class="bg-gray-50 min-h-screen font-sans text-gray-800">
     <!-- Notification Bar -->
-    <div class="bg-gray-900 text-white text-center py-2 text-sm font-medium overflow-hidden relative h-8">
-      <transition name="slide-fade" mode="out-in">
-        <span :key="currentNotificationMessage">{{ notificationMessages[currentNotificationMessage] }}</span>
-      </transition>
-    </div>
+    <NotificationBar />
 
-    <!-- 
-      This is a single-file Vue 3 prototype simulating a multi-page Nuxt.js application.
-      In a real Nuxt project, each page (Home, T-Shirts, etc.) and component (Header, Footer)
-      would be in its own .vue file within the /pages and /components directories respectively.
-      Navigation is simulated using a reactive `currentPage` variable instead of Nuxt's file-based router.
-    -->
-    
     <!-- Header & Navigation -->
-    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
-      <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <div class="text-2xl font-bold text-gray-900 cursor-pointer" @click="currentPage = 'Home'">
-          <img src="/assets/group-25.svg" 
-               alt="private-shirt.de Logo" 
-               class="h-8"
-               @error="handleLogoError">
-        </div>
-        <div class="hidden lg:flex items-center space-x-8">
-          <a @mouseenter="fertigeProdukteHover = true" @mouseleave="fertigeProdukteHover = false" @click="currentPage = 'ReadyToBuy'" class="nav-link relative">
-            Fertige Produkte
-          </a>
-          <a @click="currentPage = 'CustomizationCreator'" class="nav-link">Gestalten / Creator</a>
-          <a @click="currentPage = 'Grossbestellung'" class="nav-link">Großbestellung</a>
-        </div>
-        <div>
-          <!-- Cart Icon -->
-          <button @click="isCartOpen = !isCartOpen" class="relative ml-4 p-2 rounded-full hover:bg-gray-100 transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-            </svg>
-            <span v-if="cartItemCount > 0" 
-                  class="absolute -top-1 -right-1 bg-[#D8127D] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-              {{ cartItemCount }}
-            </span>
-          </button>
-
-          <button class="lg:hidden ml-4">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-          </button>
-        </div>
-      </nav>
-      <!-- Submenu Bar -->
-      <transition name="fade">
-        <div v-if="fertigeProdukteHover" @mouseenter="fertigeProdukteHover = true" @mouseleave="fertigeProdukteHover = false" class="fixed left-0 right-0 top-[72px] z-50 bg-gray-100 border-b border-gray-200 shadow-sm">
-          <div class="container mx-auto px-6 flex space-x-8 py-2 justify-center">
-            <button v-for="cat in submenuCategories" :key="cat.id" class="text-gray-700 hover:text-[#D8127D] font-medium px-3 py-1 rounded transition">
-              {{ cat.name }}
-            </button>
-          </div>
-        </div>
-      </transition>
-    </header>
+    <Header 
+      :cartItemCount="cartItemCount"
+      @navigate="handleNavigation"
+      @toggleCart="isCartOpen = !isCartOpen"
+    />
 
     <main>
       <!-- Page Content - Dynamically rendered based on `currentPage` -->
       <transition name="fade" mode="out-in">
         <div :key="currentPage">
           
+          <!-- HOME PAGE -->
+          <HomePage 
+            v-if="currentPage === 'Home'"
+            :readyToBuyProducts="readyToBuyProducts"
+            @navigate="handleNavigation"
+            @selectProduct="handleSelectProduct"
+          />
+
           <!-- READY TO BUY PAGE -->
-          <div v-if="currentPage === 'ReadyToBuy'">
-            <div class="container mx-auto px-6 py-12">
-              <h1 class="text-4xl font-bold mb-2">Fertige Produkte</h1>
-              <p class="text-lg text-gray-600 mb-10">Entdecke unsere Kollektion an fertigen Produkten.</p>
-              
-              <!-- Category Navigation -->
-              <div class="flex space-x-4 mb-8 overflow-x-auto pb-4">
-                <button v-for="category in categories" 
-                        :key="category.id"
-                        @click="selectedCategory = category.id"
-                        :class="['px-4 py-2 rounded-lg whitespace-nowrap', 
-                                selectedCategory === category.id ? 'bg-[#D8127D] text-white' : 'bg-gray-100']">
-                  {{ category.name }}
-                </button>
-              </div>
-
-              <!-- Search and Sort Bar -->
-              <div class="bg-white border-b mb-8">
-                <div class="container mx-auto px-6 py-4">
-                  <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <!-- Search -->
-                    <div class="w-full md:w-96">
-                      <div class="relative">
-                        <input 
-                          type="text" 
-                          v-model="searchQuery"
-                          @input="debouncedSearch($event.target.value)"
-                          placeholder="Produkte suchen..." 
-                          class="w-full pl-10 pr-4 py-2 border rounded-lg focus:border-[#D8127D] focus:ring-1 focus:ring-[#D8127D]"
-                        >
-                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                      </div>
-                    </div>
-
-                    <!-- Sort -->
-                    <div class="w-full md:w-64">
-                      <select 
-                        v-model="sortBy"
-                        class="w-full px-4 py-2 border rounded-lg focus:border-[#D8127D] focus:ring-1 focus:ring-[#D8127D]"
-                      >
-                        <option v-for="option in sortOptions" :key="option.value" :value="option.value">
-                          {{ option.label }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Products Grid -->
-              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <template v-if="!isLoading">
-                  <div v-for="product in filteredReadyToBuyProducts" 
-                       :key="product.id" 
-                       class="bg-white rounded-lg shadow-md overflow-hidden group">
-                    <div class="relative">
-                      <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
-                           @error="handleImageError($event, product.category)">
-                      <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div class="flex flex-col gap-2">
-                          <button @click.stop="currentPage = 'ProductDetail'; selectedProduct = product" 
-                                  class="btn bg-white text-gray-900">
-                            Details anzeigen
-                          </button>
-                          <button @click.stop="addToCart(product)" 
-                                  class="btn bg-[#D8127D] text-white">
-                            In den Warenkorb
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="p-4">
-                      <h4 class="font-semibold">{{ product.name }}</h4>
-                      <p class="text-[#D8127D] font-bold">{{ product.price }} €</p>
-                    </div>
-                  </div>
-                </template>
-                <template v-else>
-                  <!-- Loading Skeleton -->
-                  <div v-for="n in 8" :key="n" class="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div class="animate-pulse">
-                      <div class="bg-gray-200 h-64"></div>
-                      <div class="p-4">
-                        <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                        <div class="h-4 bg-gray-200 rounded w-1/4"></div>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-              </div>
-
-              <!-- Pagination -->
-              <div class="flex justify-center space-x-2 mt-8">
-                <button 
-                  v-for="page in totalPages" 
-                  :key="page"
-                  @click="currentPageNumber = page"
-                  :class="[
-                    'px-4 py-2 rounded-lg',
-                    currentPageNumber === page 
-                      ? 'bg-[#D8127D] text-white' 
-                      : 'bg-gray-100 hover:bg-gray-200'
-                  ]"
-                >
-                  {{ page }}
-                </button>
-              </div>
-            </div>
-          </div>
+          <ReadyToBuyPage 
+            v-if="currentPage === 'ReadyToBuy'"
+            :categories="categories"
+            :readyToBuyProducts="readyToBuyProducts"
+            :isLoading="isLoading"
+            :totalPages="totalPages"
+            @navigate="handleNavigation"
+            @selectProduct="handleSelectProduct"
+            @addToCart="addToCart"
+            @updateFilters="handleUpdateFilters"
+          />
 
           <!-- CUSTOMIZABLE PRODUCTS PAGE -->
-          <div v-if="currentPage === 'CustomizationCreator'">
-            <div class="container mx-auto px-6 py-12">
-              <h1 class="text-4xl font-bold mb-2">Individuell gestalten</h1>
-              <p class="text-lg text-gray-600 mb-10">Gestalte deine eigenen Produkte nach deinen Wünschen.</p>
-              
-              <!-- Category Navigation -->
-              <div class="flex space-x-4 mb-8 overflow-x-auto pb-4">
-                <button v-for="category in categories" 
-                        :key="category.id"
-                        @click="selectedCategory = category.id"
-                        :class="['px-4 py-2 rounded-lg whitespace-nowrap', 
-                                selectedCategory === category.id ? 'bg-[#D8127D] text-white' : 'bg-gray-100']">
-                  {{ category.name }}
-                </button>
-              </div>
-
-              <!-- Products Grid -->
-              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <div v-for="product in filteredCustomizableProducts" 
-                     :key="product.id" 
-                     class="bg-white rounded-lg shadow-md overflow-hidden group"
-                     @click="currentPage = 'ProductDetail'; selectedProduct = product">
-                  <div class="relative">
-                    <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
-                         @error="handleImageError($event, product.category)">
-                    <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button class="btn bg-[#D8127D] text-white">Jetzt gestalten</button>
-                    </div>
-                  </div>
-                  <div class="p-4">
-                    <h4 class="font-semibold">{{ product.name }}</h4>
-                    <p class="text-gray-600">Ab {{ product.price }} €</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Creator Section within the combined page -->
-            <div class="container mx-auto px-6 py-12">
-              <h1 class="text-4xl font-bold mb-2">Werde Creator!</h1>
-              <p class="text-lg text-gray-600 mb-10">Verkaufe deine Designs auf unseren Produkten – ohne Risiko und ohne Kosten.</p>
-              <DesignCreator />
-            </div>
-          </div>
-
-          <!-- HOME PAGE (/pages/index.vue) -->
-          <div v-if="currentPage === 'Home'">
-            <!-- Hero Section -->
-            <section class="relative h-[50vh] flex">
-              <!-- Left side - White background with brand colors for text -->
-              <div class="w-1/2 bg-white flex items-center justify-center p-8">
-                <div class="max-w-xl">
-                  <h1 class="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight mb-3">
-                    <span class="text-[#D8127D]">Individuell</span> <span class="text-[#D8127D]">bedruckte</span> <span class="text-[#0a3a47]">Shirts & mehr</span> – in Premium-Qualität
-                  </h1>
-                  <p class="text-base md:text-xl font-light mb-6 text-[#0a3a47]">Für dich, dein Team oder dein Business – ab 1 Stück.</p>
-                  <div class="flex flex-col sm:flex-row gap-4">
-                    <button class="btn bg-[#ffd44d] hover:bg-[#ffe28a] text-[#0a3a47] border-2 border-[#ffd44d]">Jetzt gestalten</button>
-                    <button @click="currentPage = 'Grossbestellung'" class="btn border-2 border-[#D8127D] text-[#D8127D] hover:bg-[#D8127D] hover:text-white">Großbestellung anfragen</button>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Right side - Video -->
-              <div class="w-1/2 relative overflow-hidden">
-                <div class="absolute inset-0 bg-black/20 z-10"></div>
-                <video 
-                  class="absolute inset-0 w-full h-full object-cover"
-                  autoplay 
-                  loop 
-                  muted 
-                  playsinline
-                  @error="handleVideoError"
-                >
-                  <source src="./assets/6012102_Lifeguard_Pool_1280x720.mp4" type="video/mp4">
-                </video>
-              </div>
-            </section>
-
-           
-
-            <!-- Bestsellers Section -->
-            <section class="py-12 bg-white">
-              <div class="container mx-auto px-6">
-                <h2 class="text-3xl font-bold text-center mb-8">Unsere Bestseller</h2>
-                <div class="relative">
-                  <div class="overflow-hidden">
-                    <transition-group name="slide" tag="div" class="flex">
-                      <div v-for="product in paginatedBestsellers" 
-                           :key="product.id" 
-                           class="bg-white rounded-lg shadow-md overflow-hidden group flex-shrink-0"
-                           :style="{ width: `${100 / productsPerSlide}%`, padding: '0 0.75rem' }">
-                        <div class="relative">
-                          <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
-                               @error="handleImageError($event, product.category)">
-                          <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button @click.stop="currentPage = 'ProductDetail'; selectedProduct = product" 
-                                    class="btn bg-white text-gray-900">Details anzeigen</button>
-                          </div>
-                        </div>
-                        <div class="p-4">
-                          <h4 class="font-semibold">{{ product.name }}</h4>
-                          <p class="text-[#D8127D] font-bold">{{ product.price }} €</p>
-                        </div>
-                      </div>
-                    </transition-group>
-                  </div>
-                  <!-- Carousel Navigation -->
-                  <button @click="prevBestsellerPage" 
-                          v-if="currentBestsellerPage > 0" 
-                          class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
-                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                  </button>
-                  <button @click="nextBestsellerPage" 
-                          v-if="(currentBestsellerPage + 1) * productsPerSlide < readyToBuyProducts.slice(0, 12).length" 
-                          class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
-                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-                </div>
-                <div class="text-center mt-8">
-                  <button @click="currentPage = 'ReadyToBuy'" class="btn bg-gray-200 text-gray-800 hover:bg-gray-300">Alle Produkte ansehen</button>
-                </div>
-              </div>
-            </section>
-
-            <!-- Bereit für den Sommer Section -->
-            <section class="py-12">
-              <div class="container mx-auto px-6">
-                <h2 class="text-3xl font-bold text-center mb-8">Bereit für den Sommer?</h2>
-                <div class="relative">
-                  <div class="overflow-hidden">
-                    <transition-group name="slide" tag="div" class="flex">
-                      <div v-for="product in paginatedSummerProducts" 
-                           :key="product.id" 
-                           class="bg-white rounded-lg shadow-md overflow-hidden group flex-shrink-0"
-                           :style="{ width: `${100 / productsPerSlide}%`, padding: '0 0.75rem' }">
-                        <div class="relative">
-                          <img :src="product.image" :alt="product.name" class="w-full h-64 object-cover"
-                               @error="handleImageError($event, product.category)">
-                          <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button @click.stop="currentPage = 'ProductDetail'; selectedProduct = product" 
-                                    class="btn bg-white text-gray-900">Details anzeigen</button>
-                          </div>
-                        </div>
-                        <div class="p-4">
-                          <h4 class="font-semibold">{{ product.name }}</h4>
-                          <p class="text-[#D8127D] font-bold">{{ product.price }} €</p>
-                        </div>
-                      </div>
-                    </transition-group>
-                  </div>
-                  <!-- Carousel Navigation -->
-                  <button @click="prevSummerPage" 
-                          v-if="currentSummerPage > 0" 
-                          class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
-                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                  </button>
-                  <button @click="nextSummerPage" 
-                          v-if="(currentSummerPage + 1) * productsPerSlide < readyToBuyProducts.slice(4, 8).length" 
-                          class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none z-10">
-                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-                </div>
-                <div class="text-center mt-8">
-                  <button @click="currentPage = 'ReadyToBuy'" class="btn bg-gray-200 text-gray-800 hover:bg-gray-300">Mehr Sommer-Produkte</button>
-                </div>
-              </div>
-            </section>
-
-            <!-- Custom Creator CTA Section -->
-            <section class="py-16 sm:py-24 bg-white">
-              <div class="container mx-auto px-6">
-                <div class="flex flex-col md:flex-row items-center gap-12">
-                  <div class="md:w-1/2">
-                    <img src="https://images.unsplash.com/photo-1597374399280-541892788610?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                         alt="Person creating a custom design" 
-                         class="rounded-lg shadow-lg w-full h-auto object-cover">
-                  </div>
-                  <div class="md:w-1/2 text-center md:text-left">
-                    <h2 class="text-3xl font-bold mb-4">Gestalte deine eigene Kleidung</h2>
-                    <p class="text-lg text-gray-600 mb-6">
-                      Lass deiner Kreativität freien Lauf! Mit unserem einfachen Online-Creator kannst du T-Shirts, Hoodies, Tassen und mehr mit deinen eigenen Designs, Texten und Bildern gestalten.
-                    </p>
-                    <button @click="currentPage = 'CustomizationCreator'" class="btn btn-primary btn-lg">Jetzt gestalten</button>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- For Corporate Clothing Section -->
-            <section class="py-16 sm:py-24 bg-gray-100">
-              <div class="container mx-auto px-6">
-                <div class="flex flex-col md:flex-row items-center gap-12">
-                  <div class="md:w-1/2 order-2 md:order-1 text-center md:text-left">
-                    <h2 class="text-3xl font-bold mb-4">Dein professioneller Auftritt: Firmenkleidung</h2>
-                    <p class="text-lg text-gray-600 mb-6">
-                      Statte dein Team mit hochwertiger, individuell bedruckter Firmenkleidung aus. Ob T-Shirts, Polos oder Jacken – wir sorgen für einen einheitlichen und professionellen Look.
-                    </p>
-                    <button @click="currentPage = 'Grossbestellung'" class="btn btn-primary btn-lg">Jetzt anfragen</button>
-                  </div>
-                  <div class="md:w-1/2 order-1 md:order-2">
-                    <img src="https://images.unsplash.com/photo-1637225999234-eb7da046cb4b?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                         alt="Team in custom corporate t-shirts" 
-                         class="rounded-lg shadow-lg w-full h-auto object-cover">
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- For Bachelor Party Section -->
-            <section class="py-16 sm:py-24 bg-white">
-              <div class="container mx-auto px-6">
-                 <!-- References Section -->
-              <div class="container mx-auto px-6" style="margin-bottom: 1em">
-                <h2 class="text-2xl md:text-3xl font-bold text-center mb-6">Unsere Kunden vertrauen uns</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 items-center justify-center">
-                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
-                    <img src="https://www.peopleplan.eu/wp-content/uploads/sites/6/2023/01/Hochbahn-2.png" alt="Business Team" class="h-16 object-contain" />
-                  </div>
-                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
-                    <img src="https://app.tradersclub24.de/wp-content/uploads/2023/09/Hapag_lloyd_logo.png" alt="Group in Shirts" class="h-16 object-contain" />
-                  </div>
-                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
-                    <img src="https://espressohouse.zendesk.com/hc/theming_assets/01HZPM9NQSV96Y55Z1PZM2S2Y6" alt="Team Mugs" class="h-16 object-contain" />
-                  </div>
-                  <div class="bg-white rounded-lg shadow p-4 flex items-center justify-center">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiVzAKXb_clXNwslAGqeZfH_dHmFyYZeUg7A&s" alt="Startup Office" class="h-16 object-contain" />
-                  </div>
-                </div>
-              </div>
-                <div class="flex flex-col md:flex-row items-center gap-12">
-                  <div class="md:w-1/2">
-                    <img src="https://images.unsplash.com/photo-1684244177286-8625c54bce6d?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                         alt="Group of friends celebrating bachelor party" 
-                         class="rounded-lg shadow-lg w-full h-auto object-cover">
-                  </div>
-                  <div class="md:w-1/2 text-center md:text-left">
-                    <h2 class="text-3xl font-bold mb-4">Unvergesslich feiern: Dein Junggesellenabschied</h2>
-                    <p class="text-lg text-gray-600 mb-6">
-                      Macht euren Junggesellenabschied zu einem unvergesslichen Event mit individuellen Shirts, die eure Freundschaft und diesen besonderen Anlass feiern. Witzige Sprüche, coole Designs – alles ist möglich!
-                    </p>
-                    <button @click="currentPage = 'CustomizationCreator'" class="btn btn-primary btn-lg">Jetzt gestalten</button>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- Why Us? (/components/TrustElements.vue) -->
-            <section class="py-16 sm:py-24">
-              <div class="container mx-auto px-6">
-                <h2 class="text-3xl font-bold text-center mb-12">Warum private-shirt.de?</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                  <div v-for="feature in features" :key="feature.title" class="text-center p-6">
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 text-indigo-600 mx-auto mb-4">
-                      <svg v-html="feature.icon" class="h-8 w-8 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">{{ feature.title }}</h3>
-                    <p class="text-gray-600">{{ feature.description }}</p>
-                  </div>
-                </div>
-              </div>
-            </section>
-            
-            <!-- Testimonials (/components/Testimonials.vue) -->
-            <section class="py-16 sm:py-24 bg-indigo-50">
-                <div class="container mx-auto px-6">
-                    <h2 class="text-3xl font-bold text-center mb-2">Was unsere Kunden sagen</h2>
-                    <div class="flex justify-center items-center mb-10">
-                        <span class="text-yellow-400 text-2xl">★★★★★</span>
-                        <span class="ml-2 text-gray-700 font-semibold">4.9 / 5 bei Trustpilot</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div v-for="i in 3" :key="i" class="bg-white p-8 rounded-xl shadow-lg">
-                            <p class="text-gray-600 mb-4">"Absolut begeistert von der Qualität und dem schnellen Versand! Mein Team-Hoodie sieht fantastisch aus. Jederzeit wieder!"</p>
-                            <p class="font-bold text-gray-900">- Anna S., Projektmanagerin</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- B2B & Creator CTA Sections -->
-             <section class="py-16 sm:py-24">
-                <div class="container mx-auto px-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                        <div class="bg-white p-10 rounded-xl shadow-lg text-center">
-                            <h3 class="text-2xl font-bold mb-3">Für Firmen, Vereine & Events</h3>
-                            <p class="text-gray-600 mb-6">Wir bieten attraktive Mengenrabatte und persönlichen Service für Ihre Großbestellung.</p>
-                            <button @click="currentPage = 'Grossbestellung'" class="btn btn-secondary">Jetzt anfragen</button>
-                        </div>
-                        <div class="bg-indigo-600 text-white p-10 rounded-xl shadow-lg text-center">
-                            <h3 class="text-2xl font-bold mb-3">Werde Creator!</h3>
-                            <p class="opacity-80 mb-6">Verkaufe deine Designs auf unseren Produkten – ohne Risiko und ohne Kosten.</p>
-                             <button @click="currentPage = 'CustomizationCreator'" class="btn btn-primary-inverted">Kostenlos starten</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-          </div>
+          <CustomizationCreatorPage 
+            v-if="currentPage === 'CustomizationCreator'"
+            :categories="categories"
+            :customizableProducts="customizableProducts"
+            @navigate="handleNavigation"
+            @selectProduct="handleSelectProduct"
+          />
 
           <!-- PRODUCT DETAIL PAGE -->
-          <div v-if="currentPage === 'ProductDetail' && selectedProduct">
-            <div class="container mx-auto px-6 py-12">
-              <!-- Breadcrumb Navigation -->
-              <div class="flex items-center space-x-2 text-sm text-gray-500 mb-8">
-                <a @click="currentPage = 'Home'" class="hover:text-[#D8127D] cursor-pointer">Home</a>
-                <span>/</span>
-                <a @click="currentPage = selectedProduct.customizable ? 'CustomizationCreator' : 'ReadyToBuy'" 
-                   class="hover:text-[#D8127D] cursor-pointer">
-                  {{ selectedProduct.customizable ? 'Individuell gestalten' : 'Fertige Produkte' }}
-                </a>
-                <span>/</span>
-                <span class="text-gray-900">{{ selectedProduct.name }}</span>
-              </div>
-
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <!-- Product Images -->
-                <div class="space-y-4">
-                  <div class="relative aspect-square rounded-lg overflow-hidden">
-                    <img :src="selectedImage || selectedProduct.image" 
-                         :alt="selectedProduct.name" 
-                         class="w-full h-full object-cover"
-                         @error="handleImageError($event, selectedProduct.category)">
-                    <div v-if="selectedProduct.customizable" 
-                         class="absolute top-4 left-4 bg-[#D8127D] text-white px-3 py-1 rounded-full text-sm">
-                      Individuell gestaltbar
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-4 gap-4">
-                    <button v-for="(image, index) in selectedProduct.gallery" 
-                            :key="index"
-                            @click="selectedImage = image"
-                            class="aspect-square rounded-lg overflow-hidden border-2"
-                            :class="selectedImage === image ? 'border-[#D8127D]' : 'border-transparent'">
-                      <img :src="image" 
-                           :alt="`${selectedProduct.name} - Bild ${index + 1}`"
-                           class="w-full h-full object-cover"
-                           @error="handleImageError($event, selectedProduct.category)">
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Product Info -->
-                <div>
-                  <h1 class="text-3xl font-bold mb-2">{{ selectedProduct.name }}</h1>
-                  <div class="flex items-center space-x-4 mb-4">
-                    <p class="text-2xl text-[#D8127D] font-bold">{{ selectedProduct.price }} €</p>
-                    <span v-if="selectedProduct.customizable" class="text-gray-500">Ab</span>
-                    <div class="flex items-center">
-                      <span class="text-yellow-400">★★★★★</span>
-                      <span class="ml-2 text-gray-600">(4.9)</span>
-                    </div>
-                  </div>
-                  
-                  <div class="prose max-w-none mb-8">
-                    <p>{{ selectedProduct.description }}</p>
-                  </div>
-
-                  <!-- Product Options -->
-                  <div class="space-y-6">
-                    <!-- Size/Quantity Selection -->
-                    <div v-if="selectedProduct.sizes">
-                      <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-semibold">Größe / Menge wählen</h3>
-                        <button class="text-sm text-[#D8127D] hover:underline">Größentabelle</button>
-                      </div>
-                      <div class="divide-y divide-gray-200 border rounded-lg overflow-hidden">
-                        <div v-for="size in selectedProduct.sizes" :key="size" class="flex items-center px-4 py-2">
-                          <span class="w-12 font-bold text-gray-800">{{ size }}</span>
-                          <div class="flex items-center ml-auto">
-                            <button @click="sizeQuantities[size] = Math.max(0, sizeQuantities[size] - 1)" class="w-8 h-8 border rounded-l flex items-center justify-center text-gray-700 hover:bg-gray-100">-</button>
-                            <input type="number" v-model.number="sizeQuantities[size]" min="0" class="w-12 text-center border-t border-b focus:outline-none" />
-                            <button @click="sizeQuantities[size] = sizeQuantities[size] + 1" class="w-8 h-8 border rounded-r flex items-center justify-center text-gray-700 hover:bg-gray-100">+</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- Color Selection (unchanged) -->
-                    <div v-if="selectedProduct.colors">
-                      <h3 class="font-semibold mb-2">Farbe</h3>
-                      <div class="flex flex-wrap gap-2">
-                        <button v-for="color in selectedProduct.colors" 
-                                :key="color"
-                                @click="selectedColor = color"
-                                class="w-8 h-8 rounded-full border-2 transition"
-                                :class="selectedColor === color ? 'border-[#D8127D]' : 'border-transparent'"
-                                :style="{ backgroundColor: color }">
-                        </button>
-                      </div>
-                    </div>
-                    <!-- Quantity (hidden if sizes) -->
-                    <div v-if="!selectedProduct.sizes">
-                      <h3 class="font-semibold mb-2">Menge</h3>
-                      <div class="flex items-center gap-4">
-                        <button @click="quantity = Math.max(1, quantity - 1)" 
-                                class="w-10 h-10 border rounded-lg hover:border-[#D8127D] hover:text-[#D8127D] transition">
-                          -
-                        </button>
-                        <input type="number" 
-                               v-model="quantity" 
-                               min="1" 
-                               class="w-20 text-center border rounded-lg focus:border-[#D8127D] focus:ring-1 focus:ring-[#D8127D]">
-                        <button @click="quantity++" 
-                                class="w-10 h-10 border rounded-lg hover:border-[#D8127D] hover:text-[#D8127D] transition">
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex gap-4">
-                      <button v-if="selectedProduct.customizable" 
-                              class="btn bg-[#D8127D] text-white flex-1 hover:bg-[#b30f68]">
-                        Jetzt gestalten
-                      </button>
-                      <button v-else 
-                              @click="addToCart(selectedProduct)"
-                              class="btn bg-[#D8127D] text-white flex-1 hover:bg-[#b30f68]">
-                        In den Warenkorb
-                      </button>
-                      <button class="btn border-2 border-gray-300 hover:border-[#D8127D] hover:text-[#D8127D]">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                        </svg>
-                      </button>
-                    </div>
-
-                    <!-- Product Features -->
-                    <div class="grid grid-cols-2 gap-4 pt-6 border-t">
-                      <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-[#D8127D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        <span class="text-sm">Kostenloser Versand</span>
-                      </div>
-                      <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-[#D8127D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                        </svg>
-                        <span class="text-sm">2 Jahre Garantie</span>
-                      </div>
-                      <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-[#D8127D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                        </svg>
-                        <span class="text-sm">Sicherer Zahlung</span>
-                      </div>
-                      <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-[#D8127D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                        <span class="text-sm">Persönlicher Service</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Additional Information Tabs -->
-              <div class="mt-16">
-                <div class="border-b border-gray-200">
-                  <nav class="flex space-x-8">
-                    <button v-for="tab in ['Beschreibung', 'Material & Pflege', 'Versand & Rücksendung', 'Bewertungen']"
-                            :key="tab"
-                            @click="selectedTab = tab"
-                            class="py-4 px-1 border-b-2 font-medium text-sm"
-                            :class="selectedTab === tab ? 'border-[#D8127D] text-[#D8127D]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
-                      {{ tab }}
-                    </button>
-                  </nav>
-                </div>
-
-                <div class="py-8">
-                  <!-- Description Tab -->
-                  <div v-if="selectedTab === 'Beschreibung'" class="prose max-w-none">
-                    <p>{{ selectedProduct.description }}</p>
-                    <ul>
-                      <li>Hochwertige Materialien</li>
-                      <li>Nachhaltige Produktion</li>
-                      <li>Made in Germany</li>
-                    </ul>
-                  </div>
-
-                  <!-- Material & Care Tab -->
-                  <div v-if="selectedTab === 'Material & Pflege'" class="prose max-w-none">
-                    <h3 class="text-lg font-semibold mb-4">Material</h3>
-                    <p>100% Bio-Baumwolle, GOTS zertifiziert</p>
-                    
-                    <h3 class="text-lg font-semibold mb-4 mt-8">Pflegehinweise</h3>
-                    <ul>
-                      <li>Maschinenwäsche bei 30°C</li>
-                      <li>Nicht bleichen</li>
-                      <li>Bügeln bei mittlerer Temperatur</li>
-                      <li>Nicht chemisch reinigen</li>
-                    </ul>
-                  </div>
-
-                  <!-- Shipping & Returns Tab -->
-                  <div v-if="selectedTab === 'Versand & Rücksendung'" class="prose max-w-none">
-                    <h3 class="text-lg font-semibold mb-4">Versand</h3>
-                    <ul>
-                      <li>Kostenloser Versand ab 50€</li>
-                      <li>Standardversand: 2-4 Werktage</li>
-                      <li>Expressversand: 1-2 Werktage</li>
-                    </ul>
-
-                    <h3 class="text-lg font-semibold mb-4 mt-8">Rücksendung</h3>
-                    <ul>
-                      <li>14 Tage Rückgaberecht</li>
-                      <li>Kostenlose Rücksendung</li>
-                      <li>Einfacher Rückgabeprozess</li>
-                    </ul>
-                  </div>
-
-                  <!-- Reviews Tab -->
-                  <div v-if="selectedTab === 'Bewertungen'" class="space-y-8">
-                    <div class="flex items-center space-x-4">
-                      <div class="text-4xl font-bold text-[#D8127D]">4.9</div>
-                      <div>
-                        <div class="flex text-yellow-400">
-                          <span>★★★★★</span>
-                        </div>
-                        <div class="text-sm text-gray-500">Basierend auf 128 Bewertungen</div>
-                      </div>
-                    </div>
-
-                    <div class="space-y-6">
-                      <div v-for="i in 3" :key="i" class="border-b pb-6">
-                        <div class="flex items-center space-x-4 mb-2">
-                          <div class="w-10 h-10 rounded-full bg-gray-200"></div>
-                          <div>
-                            <div class="font-semibold">Max Mustermann</div>
-                            <div class="text-sm text-gray-500">Vor 2 Wochen</div>
-                          </div>
-                        </div>
-                        <div class="flex text-yellow-400 mb-2">★★★★★</div>
-                        <p class="text-gray-600">Sehr zufrieden mit der Qualität und dem Service. Die Lieferung war schnell und das Produkt entspricht genau der Beschreibung.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div v-if="currentPage === 'ProductDetail'">
+            <div v-if="selectedProduct">
+              <ProductDetailPage 
+                :selectedProduct="selectedProduct"
+                @navigate="handleNavigation"
+                @addToCart="addToCart"
+              />
+            </div>
+            <div v-else class="container mx-auto px-6 py-24 text-center">
+              <h1 class="text-4xl font-bold mb-4">Produkt nicht gefunden</h1>
+              <p class="text-lg text-gray-600 mb-8">Das ausgewählte Produkt konnte nicht geladen werden.</p>
+              <button @click="handleNavigation('Home')" class="btn btn-primary">Zurück zur Startseite</button>
             </div>
           </div>
 
-          <!-- After the product detail tabs/content -->
-          <div v-if="currentPage === 'ProductDetail' && selectedProduct" class="mt-12">
-            <section class="bg-[#f8f8f6] border-t border-gray-200 py-10">
-              <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12">
-                <!-- Left: Description and Details -->
-                <div>
-                  <h2 class="text-2xl font-bold mb-2">{{ selectedProduct.name }}</h2>
-                  <h3 class="font-semibold mb-2">Dieses Basic T-Shirt sorgt für einen modernen Look</h3>
-                  <p class="mb-4 text-gray-700">Das Basic T-Shirt für Frauen und Männer aus der B&C Collection steht für eine zeitgemäße Passform und eine moderne Optik. Die zu 100% ringgesponnene, einlaufvorbehandelte Baumwolle (Ash: 99% Baumwolle, 1% Viskose; Sport Grey: 85% Baumwolle, 15% Viskose) mit einer Stoffdichte von 145 g/m² ist besonders strapazierfähig und weist eine ebenmäßige und weiche Oberfläche auf. Der schlauchförmige Schnitt hebt die hervorragende Passform weiter hervor.</p>
-                  <h4 class="font-semibold mb-2">Ein schickes T-Shirt für alle Tage</h4>
-                  <p class="mb-4 text-gray-700">Wenn man sich leicht und locker einkleiden möchte, dann hat das Unisex Basic T-Shirt seinen ganz großen Auftritt. Es steht für Lässigkeit und punktet mit seinem innovativen Design. Das T-Shirt lässt sich in vielen verschiedenen Farben bestellen. Der schmale Kragen sieht ansprechend aus, wurde er doch aus flexiblem Rippstrick mit Elasthan gefertigt. Im Nacken ist für mehr Formstabilität ein Kragenband verarbeitet. Das Label B&C setzt sich zudem für faire Arbeitsbedingungen in den Produktionsstätten ein. Dafür sorgt die Mitgliedschaft in der Fair Wear Foundation.</p>
-                  <div class="bg-blue-100 border border-blue-300 rounded p-3 mb-4">
-                    <span class="font-semibold text-blue-800 block mb-1">Hinweis zur Farbe Natural:</span>
-                    <span class="text-blue-800 text-sm">Die natürliche Struktur des Natural Garns ist sichtbar.</span>
-                  </div>
-                  <table class="w-full text-sm mb-4">
-                    <tbody>
-                      <tr><td class="font-semibold pr-2">Artikel-Nr.:</td><td>BCTU01T</td></tr>
-                      <tr><td class="font-semibold pr-2">Hersteller:</td><td>B&C</td></tr>
-                      <tr><td class="font-semibold pr-2">Herstellungsland:</td><td>Bangladesch</td></tr>
-                      <tr><td class="font-semibold pr-2">Druckarten:</td><td>Flexdruck, Flockdruck, Spezial Flexdruck, Digitaltransferdruck</td></tr>
-                      <tr><td class="font-semibold pr-2">Materialzusammensetzung:</td><td>100% einlaufvorbehandelte, ringgesponnene Baumwolle (Ash: 99% Baumwolle, 1% Viskose; Sport Grey: 85% Baumwolle, 15% Viskose)</td></tr>
-                      <tr><td class="font-semibold pr-2">Produktsicherheit (GPSR):</td><td>The Cotton Group SA/NV, Drève Richelle 161, 1410 Waterloo, Belgium, info@bc-collection.eu</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!-- Right: Size chart and print info -->
-                <div>
-                  <h3 class="font-semibold mb-2">Größentabelle</h3>
-                  <div class="flex items-center mb-2">
-                    <img src="/assets/shirt.svg" alt="Größentabelle Illustration" class="w-24 h-24 mr-4" />
-                    <table class="text-xs border-collapse">
-                      <thead>
-                        <tr class="text-left">
-                          <th class="pr-2">Größe</th>
-                          <th class="pr-2">Maß A (cm)</th>
-                          <th class="pr-2">Maß B (cm)</th>
-                          <th>Maß C (cm)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr v-for="row in [
-                          {g: 'XS', a: '68,0', b: '45,0', c: '17,0'},
-                          {g: 'S', a: '70,0', b: '48,0', c: '17,0'},
-                          {g: 'M', a: '72,0', b: '51,0', c: '18,0'},
-                          {g: 'L', a: '74,0', b: '54,0', c: '19,0'},
-                          {g: 'XL', a: '76,0', b: '57,0', c: '20,0'},
-                          {g: 'XXL', a: '78,0', b: '60,0', c: '21,0'}
-                        ]" :key="row.g">
-                          <td class="pr-2">{{ row.g }}</td>
-                          <td class="pr-2">{{ row.a }}</td>
-                          <td class="pr-2">{{ row.b }}</td>
-                          <td>{{ row.c }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <div class="text-xs text-gray-500 mb-4">A = Länge in cm, B = Breite in cm, C = Länge in cm<br>Es kann eine handelsübliche Toleranz von +/- 5% bestehen!</div>
-                  <h4 class="font-semibold mb-2">Design- und Produktgröße</h4>
-                  <p class="text-sm mb-2">Unsere Produktbilder zeigen Durchschnittsgrößen. Bestellst Du ein besonders großes Produkt, wird das Design nicht automatisch an den größeren Druckbereich angepasst.</p>
-                  <p class="text-xs text-gray-600 mb-2">Unser Tipp: Zieh Dein Design größer, damit es zur Größe Deines Produkts passt. <a href="#" class="text-[#D8127D] underline">Mehr erfahren</a></p>
-                  <div class="flex items-end gap-2 mt-4">
-                    <img src="/assets/printarea-kinder.svg" alt="Printarea Kinder" class="h-60" />
-                  </div>
-                </div>
-              </div>
-              <!-- Payment, shipping, returns info -->
-              <div class="container mx-auto px-6 mt-10 grid md:grid-cols-3 gap-8 text-center text-xs text-gray-700">
-                <div>
-                  <div class="font-semibold mb-2">Sichere Zahlungsmethoden</div>
-                  <div class="flex justify-center gap-2 mb-2">
-                    <span>PayPal</span><span>Klarna</span><span>VISA</span><span>Mastercard</span>
-                  </div>
-                  <a href="#" class="underline">Mehr erfahren</a>
-                </div>
-                <div>
-                  <div class="font-semibold mb-2">Internationale Lieferung</div>
-                  <div class="flex justify-center gap-2 mb-2">
-                    <span>DHL</span><span>UPS</span><span>Express</span>
-                  </div>
-                  <a href="#" class="underline">Mehr zum Versand erfahren</a>
-                </div>
-                <div>
-                  <div class="font-semibold mb-2">Unsere fairen Rückgaberegeln</div>
-                  <div class="flex justify-center gap-2 mb-2">
-                    <span>14 Tage Rückgaberecht</span>
-                  </div>
-                  <a href="#" class="underline">Mehr erfahren</a>
-                </div>
-              </div>
-            </section>
-          </div>
+          <!-- GROSSBESTELLUNG PAGE -->
+          <GrossbestellungPage 
+            v-if="currentPage === 'Grossbestellung'"
+          />
 
-          <!-- GROSSBESTELLUNG PAGE (/pages/grossbestellung.vue) -->
-          <div v-if="currentPage === 'Grossbestellung'">
-            <div class="bg-white">
-                <div class="container mx-auto px-6 py-16">
-                    <div class="max-w-4xl mx-auto">
-                        <h1 class="text-4xl font-bold text-center mb-4">Großbestellungen für Ihr Business</h1>
-                        <p class="text-xl text-gray-600 text-center mb-12">Perfekt für Firmen, Vereine, Events und Merchandise.</p>
+          <!-- CHECKOUT PAGE -->
+          <CheckoutPage 
+            v-if="currentPage === 'Checkout'"
+            :cart="cart"
+            @completeOrder="handleCompleteOrder"
+          />
 
-                        <div class="grid md:grid-cols-3 gap-8 text-center mb-16">
-                           <div v-for="benefit in b2bBenefits" :key="benefit.title" class="p-4">
-                               <div class="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 text-indigo-600 mx-auto mb-4">
-                                  <svg v-html="benefit.icon" class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
-                               </div>
-                               <h3 class="text-lg font-semibold">{{ benefit.title }}</h3>
-                               <p class="text-sm text-gray-500">{{ benefit.description }}</p>
-                           </div>
-                        </div>
+          <!-- ORDER CONFIRMATION PAGE -->
+          <OrderConfirmationPage 
+            v-if="currentPage === 'OrderConfirmation'"
+            @navigate="handleNavigation"
+          />
 
-                        <div class="bg-gray-50 p-8 rounded-xl border border-gray-200">
-                             <h2 class="text-2xl font-bold mb-6 text-center">Unverbindliche Anfrage stellen</h2>
-                             <form class="space-y-6">
-                               <div class="grid md:grid-cols-2 gap-6">
-                                 <input type="text" placeholder="Firma / Name*" class="form-input">
-                                 <input type="email" placeholder="E-Mail*" class="form-input">
-                               </div>
-                               <input type="tel" placeholder="Telefon (optional)" class="form-input">
-                               <input type="number" placeholder="Geschätzte Stückzahl*" class="form-input">
-                               <textarea placeholder="Ihre Nachricht an uns..." rows="5" class="form-input"></textarea>
-                               <div>
-                                 <label class="block mb-2 text-sm font-medium text-gray-700">Design hochladen (optional)</label>
-                                 <input type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
-                               </div>
-                               <div class="text-center">
-                                 <button type="submit" class="btn btn-primary btn-lg">Anfrage senden</button>
-                               </div>
-                             </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-          </div>
-               <!-- Store Locations Section -->
-          <section class="py-16 sm:py-24 bg-gray-50">
-            <div class="container mx-auto px-6 text-center">
-              <!-- New Pin Needle SVG -->
-              <div class="mb-8">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="mx-auto text-[#FFC72C]">
-                  <path d="M40 0C21.2 0 6 15.2 6 34C6 58 40 80 40 80C40 80 74 58 74 34C74 15.2 58.8 0 40 0ZM40 46C33.488 46 28 40.512 28 34C28 27.488 33.488 22 40 22C46.512 22 52 27.488 52 34C52 40.512 46.512 46 40 46Z" fill="currentColor"/>
-                </svg>
-              </div>
-
-              <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-12 relative inline-block leading-tight">
-                Zuhause, wo du es bist
-                <span class="block absolute -bottom-3 left-0 w-full h-2 bg-[#D8127D] transform skew-x-12 opacity-75"></span>
-              </h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto">
-                <!-- Europa Passage Store -->
-                <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200 text-left">
-                  <img src="./assets/20210421_001_Private_Shirt_Hamburg.webp" 
-                       alt="Europa Passage Storefront" 
-                       class="w-full h-48 object-cover rounded-lg mb-6 shadow-sm">
-                  <h3 class="text-2xl font-bold text-[#D8127D] mb-4">Europa Passage</h3>
-                  <p class="text-lg font-medium text-gray-800 mb-2">Private Shirt Europa Passage</p>
-                  <p class="text-gray-600 mb-4">
-                    <a href="https://maps.google.com/?q=Ballindamm 40, 20095 Hamburg" target="_blank" class="text-[#D8127D] hover:underline">
-                      Ballindamm 40, 20095 Hamburg
-                    </a>
-                  </p>
-                  
-                  <p class="text-gray-700 mb-2"><span class="font-semibold">Tel:</span> <a href="tel:+494032873804" class="text-[#D8127D] hover:underline">040 328 738 04</a></p>
-                  <p class="text-gray-700 mb-2"><span class="font-semibold">Fax:</span> 040 328 738 15</p>
-                  <p class="text-gray-700"><span class="font-semibold">E-Mail:</span> <a href="mailto:europa-passage@private-shirt.de" class="text-[#D8127D] hover:underline">europa-passage@private-shirt.de</a></p>
-                </div>
-
-                <!-- Altona Store -->
-                <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200 text-left">
-                  <img src="./assets/20201123_193242.webp" 
-                       alt="Altona Storefront" 
-                       class="w-full h-48 object-cover rounded-lg mb-6 shadow-sm">
-                  <h3 class="text-2xl font-bold text-[#D8127D] mb-4">Altona</h3>
-                  <p class="text-lg font-medium text-gray-800 mb-2">EKZ Mercado</p>
-                  <p class="text-lg font-medium text-gray-800 mb-2">Private Shirt Altona</p>
-                  <p class="text-gray-600 mb-4">
-                    <a href="https://maps.google.com/?q=Ottenser Hauptstraße 10, 22765 Hamburg" target="_blank" class="text-[#D8127D] hover:underline">
-                      Ottenser Hauptstraße 10, 22765 Hamburg
-                    </a>
-                  </p>
-                  
-                  <p class="text-gray-700 mb-2"><span class="font-semibold">Tel:</span> <a href="tel:+494039907778" class="text-[#D8127D] hover:underline">040 399 077 78</a></p>
-                  <p class="text-gray-700 mb-2"><span class="font-semibold">Fax:</span> 040 399 081 16</p>
-                  <p class="text-gray-700"><span class="font-semibold">E-Mail:</span> <a href="mailto:altona@private-shirt.de" class="text-[#D8127D] hover:underline">altona@private-shirt.de</a></p>
-                </div>
-              </div>
-            </div>
-          </section>
           <!-- OTHER PAGES (Placeholders) -->
-          <div v-if="!['Home', 'ReadyToBuy', 'CustomizationCreator', 'Grossbestellung'].includes(currentPage)">
-              <div class="container mx-auto px-6 py-24 text-center">
-                  <h1 class="text-4xl font-bold mb-4">{{ currentPage }}</h1>
-                  <p class="text-lg text-gray-600">Diese Seite befindet sich im Aufbau.</p>
-                  <button @click="currentPage = 'Home'" class="btn btn-primary mt-8">Zurück zur Startseite</button>
-              </div>
-          </div>
-
-          <!-- Checkout Page -->
-          <div v-if="currentPage === 'Checkout'" class="container mx-auto px-6 py-12">
-            <div class="max-w-4xl mx-auto">
-              <h1 class="text-3xl font-bold mb-8">Zur Kasse</h1>
-              
-              <!-- Checkout Steps -->
-              <div class="flex justify-between mb-8">
-                <div v-for="step in 3" :key="step" 
-                     :class="['flex-1 text-center', checkoutStep >= step ? 'text-[#D8127D]' : 'text-gray-400']">
-                  <div class="w-8 h-8 rounded-full border-2 mx-auto mb-2 flex items-center justify-center"
-                       :class="checkoutStep >= step ? 'border-[#D8127D]' : 'border-gray-400'">
-                    {{ step }}
-                  </div>
-                  <span class="text-sm">
-                    {{ step === 1 ? 'Versand' : step === 2 ? 'Zahlung' : 'Bestätigung' }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Step 1: Shipping -->
-              <div v-if="checkoutStep === 1" class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-xl font-semibold mb-4">Versandadresse</h2>
-                <form @submit.prevent="checkoutStep = 2" class="space-y-4">
-                  <div class="grid grid-cols-2 gap-4">
-                    <input v-model="shippingAddress.firstName" type="text" placeholder="Vorname" required class="form-input">
-                    <input v-model="shippingAddress.lastName" type="text" placeholder="Nachname" required class="form-input">
-                  </div>
-                  <input v-model="shippingAddress.email" type="email" placeholder="E-Mail" required class="form-input">
-                  <input v-model="shippingAddress.phone" type="tel" placeholder="Telefon" required class="form-input">
-                  <input v-model="shippingAddress.address" type="text" placeholder="Adresse" required class="form-input">
-                  <div class="grid grid-cols-2 gap-4">
-                    <input v-model="shippingAddress.city" type="text" placeholder="Stadt" required class="form-input">
-                    <input v-model="shippingAddress.postalCode" type="text" placeholder="PLZ" required class="form-input">
-                  </div>
-                  <select v-model="shippingAddress.country" class="form-input">
-                    <option value="Deutschland">Deutschland</option>
-                    <option value="Österreich">Österreich</option>
-                    <option value="Schweiz">Schweiz</option>
-                  </select>
-                  <button type="submit" class="btn bg-[#D8127D] text-white w-full">Weiter zur Zahlung</button>
-                </form>
-              </div>
-
-              <!-- Step 2: Payment -->
-              <div v-if="checkoutStep === 2" class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-xl font-semibold mb-4">Zahlungsmethode</h2>
-                <div class="space-y-4">
-                  <div class="flex items-center space-x-4 p-4 border rounded-lg cursor-pointer"
-                       :class="paymentMethod === 'credit_card' ? 'border-[#D8127D]' : 'border-gray-200'"
-                       @click="paymentMethod = 'credit_card'">
-                    <input type="radio" v-model="paymentMethod" value="credit_card" class="text-[#D8127D]">
-                    <div>
-                      <h3 class="font-semibold">Kreditkarte</h3>
-                      <p class="text-sm text-gray-500">Visa, Mastercard, American Express</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center space-x-4 p-4 border rounded-lg cursor-pointer"
-                       :class="paymentMethod === 'paypal' ? 'border-[#D8127D]' : 'border-gray-200'"
-                       @click="paymentMethod = 'paypal'">
-                    <input type="radio" v-model="paymentMethod" value="paypal" class="text-[#D8127D]">
-                    <div>
-                      <h3 class="font-semibold">PayPal</h3>
-                      <p class="text-sm text-gray-500">Schnell und sicher bezahlen</p>
-                    </div>
-                  </div>
-                  <textarea v-model="orderNotes" placeholder="Bestellnotizen (optional)" class="form-input" rows="3"></textarea>
-                  <div class="flex justify-between">
-                    <button @click="checkoutStep = 1" class="btn border-2 border-gray-300">Zurück</button>
-                    <button @click="checkoutStep = 3" class="btn bg-[#D8127D] text-white">Weiter zur Bestätigung</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Step 3: Confirmation -->
-              <div v-if="checkoutStep === 3" class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-xl font-semibold mb-4">Bestellung bestätigen</h2>
-                <div class="space-y-6">
-                  <div class="border-b pb-4">
-                    <h3 class="font-semibold mb-2">Versandadresse</h3>
-                    <p>{{ shippingAddress.firstName }} {{ shippingAddress.lastName }}</p>
-                    <p>{{ shippingAddress.address }}</p>
-                    <p>{{ shippingAddress.postalCode }} {{ shippingAddress.city }}</p>
-                    <p>{{ shippingAddress.country }}</p>
-                  </div>
-                  <div class="border-b pb-4">
-                    <h3 class="font-semibold mb-2">Zahlungsmethode</h3>
-                    <p>{{ paymentMethod === 'credit_card' ? 'Kreditkarte' : 'PayPal' }}</p>
-                  </div>
-                  <div class="border-b pb-4">
-                    <h3 class="font-semibold mb-2">Bestellübersicht</h3>
-                    <div v-for="item in cart" :key="item.id" class="flex justify-between py-2">
-                      <span>{{ item.name }} ({{ item.quantity }})</span>
-                      <span>{{ (parseFloat(item.price) * item.quantity).toFixed(2) }} €</span>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <p class="text-lg font-semibold">Gesamtsumme: {{ cartTotal.toFixed(2) }} €</p>
-                  </div>
-                  <div class="flex justify-between">
-                    <button @click="checkoutStep = 2" class="btn border-2 border-gray-300">Zurück</button>
-                    <button @click="completeOrder" class="btn bg-[#D8127D] text-white">Bestellung abschließen</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Order Confirmation Page -->
-          <div v-if="currentPage === 'OrderConfirmation'" class="container mx-auto px-6 py-12">
-            <div class="max-w-2xl mx-auto text-center">
-              <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <h1 class="text-3xl font-bold mb-4">Vielen Dank für Ihre Bestellung!</h1>
-              <p class="text-gray-600 mb-8">Wir haben Ihnen eine Bestätigungs-E-Mail gesendet.</p>
-              <button @click="currentPage = 'Home'" class="btn bg-[#D8127D] text-white">
-                Zurück zur Startseite
-              </button>
-            </div>
-          </div>
-
-          <!-- Creator Page -->
-          <div v-if="currentPage === 'Creator'" class="container mx-auto px-4 py-8">
-            <DesignCreator />
-          </div>
-
-          <!-- Enhanced Cart Sidebar -->
-          <div v-if="isCartOpen" class="fixed inset-0 bg-black/50 z-50" @click.self="isCartOpen = false">
-            <div class="absolute right-0 top-0 h-full w-full md:w-96 bg-white shadow-xl">
-              <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                  <h2 class="text-xl font-bold">Warenkorb ({{ cartItemCount }})</h2>
-                  <button @click="isCartOpen = false" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Cart Tabs -->
-                <div class="flex border-b mb-4">
-                  <button 
-                    class="px-4 py-2 border-b-2"
-                    :class="activeCartTab === 'Warenkorb' ? 'border-[#D8127D] text-[#D8127D]' : 'border-transparent'"
-                    @click="activeCartTab = 'Warenkorb'"
-                  >
-                    Warenkorb
-                  </button>
-                </div>
-
-                <!-- Cart Items -->
-                <div v-if="activeCartTab === 'Warenkorb' && cart.length > 0" class="space-y-4">
-                  <div v-for="(item, index) in cart" :key="index" class="flex gap-4 pb-4 border-b">
-                    <img :src="item.image" 
-                         :alt="item.name" 
-                         class="w-20 h-20 object-cover rounded"
-                         @error="handleImageError($event, item.category)">
-                    <div class="flex-1">
-                      <h3 class="font-semibold">{{ item.name }}</h3>
-                      <p v-if="item.selectedColor || item.selectedSize" class="text-sm text-gray-500">
-                        <span v-if="item.selectedColor">Farbe: <span class="capitalize">{{ item.selectedColor }}</span></span>
-                        <span v-if="item.selectedColor && item.selectedSize"> / </span>
-                        <span v-if="item.selectedSize">Größe: {{ item.selectedSize }}</span>
-                      </p>
-                      <div class="flex justify-between items-center mt-2">
-                        <div class="flex items-center border rounded-lg px-2 py-1">
-                          <button @click="updateCartItemQuantity(index, item.quantity - 1)" class="p-1 text-gray-600 hover:text-gray-900">-</button>
-                          <input type="number" v-model.number="item.quantity" @change="updateCartItemQuantity(index, item.quantity)" min="1" class="w-10 text-center text-sm border-x mx-2 focus:outline-none focus:ring-0">
-                          <button @click="updateCartItemQuantity(index, item.quantity + 1)" class="p-1 text-gray-600 hover:text-gray-900">+</button>
-                        </div>
-                        <div class="font-bold">
-                          {{ (parseFloat(item.price) * item.quantity).toFixed(2) }} €
-                        </div>
-                      </div>
-                      <div class="flex justify-end text-sm mt-2">
-                        <button @click="moveToSavedForLater(index)" class="text-gray-500 hover:text-gray-700 mr-4">Bearbeiten</button>
-                        <button @click="moveToSavedForLater(index)" class="text-gray-500 hover:text-gray-700 mr-4">Kopieren</button>
-                        <button @click="removeFromCart(index)" class="text-gray-500 hover:text-gray-700">Löschen</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Saved For Later -->
-                <div v-if="activeCartTab === 'Gespeichert' && savedForLater.length > 0" class="space-y-4">
-                  <div v-for="(item, index) in savedForLater" :key="index" class="flex gap-4 pb-4 border-b">
-                    <img :src="item.image" 
-                         :alt="item.name" 
-                         class="w-20 h-20 object-cover rounded"
-                         @error="handleImageError($event, item.category)">
-                    <div class="flex-1">
-                      <h3 class="font-semibold">{{ item.name }}</h3>
-                      <p class="text-sm text-gray-500">
-                        {{ item.selectedSize }} / {{ item.selectedColor }}
-                      </p>
-                      <div class="flex justify-between items-center mt-2">
-                        <div class="text-[#D8127D] font-bold">
-                          {{ item.price }} €
-                        </div>
-                        <button 
-                          @click="moveToCart(index)"
-                          class="text-[#D8127D] hover:text-[#b30f68]"
-                        >
-                          In den Warenkorb
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Recently Viewed -->
-                <div v-if="activeCartTab === 'Kürzlich angesehen'" class="space-y-4">
-                  <div v-for="item in recentlyViewed" :key="item.id" class="flex gap-4 pb-4 border-b">
-                    <img :src="item.image" 
-                         :alt="item.name" 
-                         class="w-20 h-20 object-cover rounded"
-                         @error="handleImageError($event, item.category)">
-                    <div class="flex-1">
-                      <h3 class="font-semibold">{{ item.name }}</h3>
-                      <p class="text-[#D8127D] font-bold">{{ item.price }} €</p>
-                      <button 
-                        @click="addToCart(item)"
-                        class="text-[#D8127D] hover:text-[#b30f68]"
-                      >
-                        In den Warenkorb
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Empty States -->
-                <div v-if="activeCartTab === 'Warenkorb' && cart.length === 0" class="text-center py-8">
-                  <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                  </svg>
-                  <p class="text-gray-500">Ihr Warenkorb ist leer</p>
-                </div>
-
-                <!-- Cart Summary -->
-                <div v-if="activeCartTab === 'Warenkorb' && cart.length > 0" class="mt-6 pt-4 border-t">
-                  <div class="flex justify-between text-gray-700 mb-2">
-                    <span>Zwischensumme</span>
-                    <span>{{ cartTotal.toFixed(2) }} €</span>
-                  </div>
-                  <div class="flex justify-between text-gray-700 mb-2">
-                    <span>Versandkosten</span>
-                    <span>{{ shippingCost.toFixed(2) }} €</span>
-                  </div>
-                  <!-- Free Shipping Progress Bar -->
-                  <div class="mb-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-800">
-                    <template v-if="remainingForFreeShipping > 0">
-                      <p class="mb-2">Noch <strong>{{ remainingForFreeShipping.toFixed(2) }} €</strong> bis zum <span class="font-semibold">kostenlosen Versand!</span></p>
-                      <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-[#D8127D] h-2.5 rounded-full" :style="{ width: freeShippingProgress + '%' }"></div>
-                      </div>
-                    </template>
-                    <template v-else>
-                      <p class="font-semibold">Kostenloser Versand! 🎉</p>
-                    </template>
-                  </div>
-
-                  <div class="flex justify-between font-bold text-lg mb-4">
-                    <span>Gesamtsumme</span>
-                    <span>{{ (cartTotal + shippingCost).toFixed(2) }} €</span>
-                  </div>
-                  <button @click="proceedToCheckout" class="btn bg-[#D8127D] text-white w-full mb-3">Zur Kasse</button>
-                  <button @click="isCartOpen = false; currentPage = 'ReadyToBuy'" class="btn bg-gray-200 text-gray-800 w-full">Weiter einkaufen</button>
-                </div>
-              </div>
+          <div v-if="!['Home', 'ReadyToBuy', 'CustomizationCreator', 'ProductDetail', 'Grossbestellung', 'Checkout', 'OrderConfirmation'].includes(currentPage)">
+            <div class="container mx-auto px-6 py-24 text-center">
+              <h1 class="text-4xl font-bold mb-4">{{ currentPage }}</h1>
+              <p class="text-lg text-gray-600">Diese Seite befindet sich im Aufbau.</p>
+              <button @click="handleNavigation('Home')" class="btn btn-primary mt-8">Zurück zur Startseite</button>
             </div>
           </div>
 
@@ -1203,64 +92,25 @@
       </transition>
     </main>
 
-    <!-- Footer (/layouts/default.vue) -->
-    <footer class="bg-[#D8127D] text-white">
-        <div class="container mx-auto px-6 py-12">
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                <div class="col-span-2 md:col-span-4 lg:col-span-1 mb-6 lg:mb-0">
-                    <img src="/assets/group-25.svg" 
-                         alt="private-shirt.de Logo" 
-                         class="h-8 mb-4"
-                         @error="handleLogoError">
-                    <p class="text-white text-sm opacity-80">Dein Druck. Deine Idee. Dein Shirt.</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-3">Shop</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">T-Shirts</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Hoodies</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Tassen</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Accessoires</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-3">Service</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Großbestellungen</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Hilfe & FAQ</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Kontakt</a></li>
-                    </ul>
-                </div>
-                 <div>
-                    <h4 class="font-semibold mb-3">Unternehmen</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Über uns</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Jobs</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Nachhaltigkeit</a></li>
-                    </ul>
-                </div>
-                 <div>
-                    <h4 class="font-semibold mb-3">Legal</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Impressum</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">Datenschutz</a></li>
-                        <li><a href="#" class="footer-link text-white hover:text-[#ffd44d]">AGB</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="mt-12 border-t border-[#ffd44d] pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-white opacity-80">&copy; {{ new Date().getFullYear() }} private-shirt.de. Alle Rechte vorbehalten.</p>
-                <div class="flex space-x-4 mt-4 md:mt-0">
-                    <!-- Trust Logos Placeholder -->
-                    <span class="text-xs">VISA</span>
-                    <span class="text-xs">Mastercard</span>
-                    <span class="text-xs">PayPal</span>
-                    <span class="text-xs">DHL</span>
-                </div>
-            </div>
-        </div>
-    </footer>
-    
+    <!-- Footer -->
+    <Footer />
+
+    <!-- Cart Sidebar -->
+    <Cart 
+      :isOpen="isCartOpen"
+      :cart="cart"
+      :savedForLater="savedForLater"
+      :recentlyViewed="recentlyViewed"
+      @close="isCartOpen = false"
+      @navigate="handleNavigation"
+      @updateCart="updateCartItemQuantity"
+      @removeFromCart="removeFromCart"
+      @moveToSavedForLater="moveToSavedForLater"
+      @moveToCart="moveToCart"
+      @addToCart="addToCart"
+      @proceedToCheckout="proceedToCheckout"
+    />
+
     <!-- Live Chat Icon (UI Only) -->
     <div class="fixed bottom-5 right-5 z-50">
       <button class="bg-[#D8127D] text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-[#b30f68] transition">
@@ -1295,54 +145,32 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
-import DesignCreator from './components/DesignCreator.vue'
+import NotificationBar from '~/components/NotificationBar.vue'
+import Header from '~/components/Header.vue'
+import Footer from '~/components/Footer.vue'
+import Cart from '~/components/Cart.vue'
+import HomePage from '~/pages/index.vue'
+import ReadyToBuyPage from '~/pages/ready-to-buy.vue'
+import CustomizationCreatorPage from '~/pages/customization-creator.vue'
+import ProductDetailPage from '~/pages/product-detail.vue'
+import GrossbestellungPage from '~/pages/grossbestellung.vue'
+import CheckoutPage from '~/pages/checkout.vue'
+import OrderConfirmationPage from '~/pages/order-confirmation.vue'
 
 // WooCommerce API Configuration
 const WOO_CONFIG = {
   baseUrl: 'https://timob10.sg-host.com/wp-json/wc/v3',
   consumerKey: 'ck_17e70b1dcd1b0d0aab92da0c8ac7bda10a280827',
   consumerSecret: 'cs_e7d6fe86192848c4d06c5b0eb4692d32d2b42a50'
-};
+}
 
 // State
 const currentPage = ref('Home')
 const selectedProduct = ref(null)
-const selectedCategory = ref('all')
-const selectedImage = ref(null)
-const selectedSize = ref(null)
-const selectedColor = ref(null)
-const quantity = ref(1)
-const selectedTab = ref('Beschreibung')
-// Multi-size quantity selector state
-const sizeQuantities = ref({})
-watch(selectedProduct, (newProduct) => {
-  if (newProduct && newProduct.sizes) {
-    const initial = {}
-    newProduct.sizes.forEach(size => { initial[size] = 0 })
-    sizeQuantities.value = initial
-  }
-})
-
-// Pagination
-const currentPageNumber = ref(1)
-const itemsPerPage = ref(12)
-const totalProducts = ref(0)
-
-// Search & Sort
-const searchQuery = ref('')
-const debouncedSearchQuery = ref('')
-const sortBy = ref('menu_order') // Default WooCommerce sorting
-const sortOptions = [
-  { value: 'menu_order', label: 'Standard' },
-  { value: 'popularity', label: 'Beliebtheit' },
-  { value: 'date', label: 'Neueste' },
-  { value: 'price', label: 'Preis: Niedrig zu Hoch' },
-  { value: 'price-desc', label: 'Preis: Hoch zu Niedrig' }
-];
-
-// Cart
 const cart = ref([])
 const isCartOpen = ref(false)
+const savedForLater = ref([])
+const recentlyViewed = ref([])
 
 // Data
 const categories = ref([])
@@ -1351,66 +179,10 @@ const customizableProducts = ref([])
 const isLoading = ref(true)
 const error = ref(null)
 
-// Additional State
-const checkoutStep = ref(1)
-const shippingAddress = ref({
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  address: '',
-  city: '',
-  postalCode: '',
-  country: 'Deutschland'
-})
-const paymentMethod = ref('credit_card')
-const orderNotes = ref('')
-
-// Filters
-const priceRange = ref([0, 100])
-const selectedColors = ref([])
-const selectedSizes = ref([])
-const showFilters = ref(false)
-
-// Cart Features
-const savedForLater = ref([])
-const recentlyViewed = ref([])
-
-// Creator State
-const canvas = ref(null)
-const isCreatorOpen = ref(false)
-const selectedTool = ref('text')
-const textColor = ref('#000000')
-const fontSize = ref(20)
-const uploadedImages = ref([])
-const activeCartTab = ref('Warenkorb')
-
-// Notification Bar State
-const notificationMessages = ref([
-  'Kostenfreier Versand ab 50€',
-  'Abholung im Store am nächsten Tag bei Bestellungen bis 12 Uhr'
-]);
-const currentNotificationMessage = ref(0);
-let notificationInterval = null;
-
-// Debounce function
-const debounce = (fn, delay) => {
-  let timeoutId
-  return (...args) => {
-    clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => fn(...args), delay)
-  }
-}
-
-// Create debounced search function
-const debouncedSearch = debounce((value) => {
-  debouncedSearchQuery.value = value
-}, 300) // 300ms delay
-
-// Watch for changes in search, sort, or pagination
-watch([debouncedSearchQuery, sortBy, currentPageNumber], () => {
-  initializeData();
-});
+// Pagination
+const currentPageNumber = ref(1)
+const itemsPerPage = ref(12)
+const totalProducts = ref(0)
 
 // WooCommerce API Service
 const wooService = {
@@ -1423,25 +195,25 @@ const wooService = {
             'Authorization': 'Basic ' + btoa(`${WOO_CONFIG.consumerKey}:${WOO_CONFIG.consumerSecret}`)
           }
         }
-      );
-      if (!response.ok) throw new Error('Failed to fetch categories');
-      return await response.json();
+      )
+      if (!response.ok) throw new Error('Failed to fetch categories')
+      return await response.json()
     } catch (err) {
-      console.error('Error fetching categories:', err);
-      throw err;
+      console.error('Error fetching categories:', err)
+      throw err
     }
   },
 
   async fetchAllProducts(params = {}) {
-    let allProducts = [];
-    let page = 1;
-    let totalPages = 1;
+    let allProducts = []
+    let page = 1
+    let totalPages = 1
     do {
       const queryParams = new URLSearchParams({
         per_page: 100, // max allowed by WooCommerce
         page,
         ...params
-      }).toString();
+      }).toString()
       const response = await fetch(
         `${WOO_CONFIG.baseUrl}/products?${queryParams}`,
         {
@@ -1449,14 +221,14 @@ const wooService = {
             'Authorization': 'Basic ' + btoa(`${WOO_CONFIG.consumerKey}:${WOO_CONFIG.consumerSecret}`)
           }
         }
-      );
-      if (!response.ok) throw new Error('Failed to fetch products');
-      const products = await response.json();
-      allProducts = allProducts.concat(products);
-      totalPages = parseInt(response.headers.get('X-WP-TotalPages')) || 1;
-      page++;
-    } while (page <= totalPages);
-    return allProducts;
+      )
+      if (!response.ok) throw new Error('Failed to fetch products')
+      const products = await response.json()
+      allProducts = allProducts.concat(products)
+      totalPages = parseInt(response.headers.get('X-WP-TotalPages')) || 1
+      page++
+    } while (page <= totalPages)
+    return allProducts
   },
 
   async fetchProduct(id) {
@@ -1468,108 +240,37 @@ const wooService = {
             'Authorization': 'Basic ' + btoa(`${WOO_CONFIG.consumerKey}:${WOO_CONFIG.consumerSecret}`)
           }
         }
-      );
-      if (!response.ok) throw new Error('Failed to fetch product');
-      return await response.json();
+      )
+      if (!response.ok) throw new Error('Failed to fetch product')
+      return await response.json()
     } catch (err) {
-      console.error('Error fetching product:', err);
-      throw err;
+      console.error('Error fetching product:', err)
+      throw err
     }
   }
-};
-
-// Cart Methods
-const addToCart = (product) => {
-  if (product.sizes?.length > 0) {
-    let added = false
-    for (const size of product.sizes) {
-      const qty = sizeQuantities.value[size]
-      if (qty > 0) {
-        cart.value.push({
-          ...product,
-          quantity: qty,
-          selectedSize: size,
-          selectedColor: selectedColor.value
-        })
-        added = true
-      }
-    }
-    if (!added) {
-      alert('Bitte wählen Sie mindestens eine Größe und Menge aus.')
-      return
-    }
-    // Reset
-    for (const size of product.sizes) sizeQuantities.value[size] = 0
-    selectedColor.value = null
-    alert('Produkte wurden zum Warenkorb hinzugefügt')
-  } else {
-    // Single size logic (unchanged)
-    if (product.colors?.length > 0 && !selectedColor.value) {
-      alert('Bitte wählen Sie eine Farbe aus.')
-      return
-    }
-    cart.value.push({
-      ...product,
-      quantity: quantity.value,
-      selectedSize: null,
-      selectedColor: selectedColor.value
-    })
-    quantity.value = 1
-    selectedColor.value = null
-    alert('Produkt wurde zum Warenkorb hinzugefügt')
-  }
-  localStorage.setItem('cart', JSON.stringify(cart.value))
 }
-
-const addCustomDesignToCart = ({ image, price }) => {
-  cart.value.push({
-    id: Date.now(),
-    name: 'Eigenes Design',
-    image,
-    price,
-    quantity: 1
-  });
-  localStorage.setItem('cart', JSON.stringify(cart.value));
-  alert('Design wurde zum Warenkorb hinzugefügt');
-};
-
-const removeFromCart = (index) => {
-  cart.value.splice(index, 1);
-  localStorage.setItem('cart', JSON.stringify(cart.value));
-};
-
-const updateCartItemQuantity = (index, quantity) => {
-  if (quantity < 1) return;
-  cart.value[index].quantity = quantity;
-  localStorage.setItem('cart', JSON.stringify(cart.value));
-};
-
-const clearCart = () => {
-  cart.value = [];
-  localStorage.setItem('cart', JSON.stringify(cart.value));
-};
 
 // Computed properties
 const cartTotal = computed(() => {
   return cart.value.reduce((total, item) => {
-    return total + (parseFloat(item.price) * item.quantity);
-  }, 0);
-});
+    return total + (parseFloat(item.price) * item.quantity)
+  }, 0)
+})
 
 const cartItemCount = computed(() => {
-  return cart.value.reduce((count, item) => count + item.quantity, 0);
-});
+  return cart.value.reduce((count, item) => count + item.quantity, 0)
+})
 
 const totalPages = computed(() => {
-  return Math.ceil(totalProducts.value / itemsPerPage.value);
-});
+  return Math.ceil(totalProducts.value / itemsPerPage.value)
+})
 
 // Initialize Data
 const initializeData = async () => {
   try {
-    isLoading.value = true;
+    isLoading.value = true
     // Fetch categories
-    const wooCategories = await wooService.fetchCategories();
+    const wooCategories = await wooService.fetchCategories()
     categories.value = [
       { id: 'all', name: 'Alle Kategorien' },
       ...wooCategories.map(cat => ({
@@ -1577,34 +278,34 @@ const initializeData = async () => {
         name: cat.name,
         image: cat.image?.src || '/assets/placeholder.jpg'
       }))
-    ];
+    ]
 
     // Fetch all products
-    const products = await wooService.fetchAllProducts();
-    totalProducts.value = products.length;
+    const products = await wooService.fetchAllProducts()
+    totalProducts.value = products.length
     // Separate products into ready-to-buy and customizable
     readyToBuyProducts.value = products
       .filter(product => !product.meta_data?.some(meta => meta.key === '_customizable' && meta.value === 'yes'))
-      .map(formatProduct);
+      .map(formatProduct)
 
     customizableProducts.value = products
       .filter(product => product.meta_data?.some(meta => meta.key === '_customizable' && meta.value === 'yes'))
-      .map(formatProduct);
+      .map(formatProduct)
 
   } catch (err) {
-    error.value = err.message;
-    console.error('Error initializing data:', err);
+    error.value = err.message
+    console.error('Error initializing data:', err)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // Format product data from WooCommerce
 const formatProduct = (product) => {
-  const customizable = product.meta_data?.some(meta => meta.key === '_customizable' && meta.value === 'yes');
+  const customizable = product.meta_data?.some(meta => meta.key === '_customizable' && meta.value === 'yes')
   
   // Get category name for fallback image
-  const categoryName = product.categories[0]?.name?.toLowerCase() || 'clothing';
+  const categoryName = product.categories[0]?.name?.toLowerCase() || 'clothing'
   
   return {
     id: product.id,
@@ -1622,9 +323,9 @@ const formatProduct = (product) => {
     sku: product.sku,
     weight: product.weight,
     dimensions: product.dimensions,
-    tags: product.tags?.map(tag => tag.slug) || [] // <-- Add tags as array of slugs
-  };
-};
+    tags: product.tags?.map(tag => tag.slug) || []
+  }
+}
 
 // Utility function to get relevant Unsplash fallback images
 const getFallbackImage = (category) => {
@@ -1636,273 +337,117 @@ const getFallbackImage = (category) => {
     'caps': 'https://images.unsplash.com/photo-1521369909049-ecaf380c8536?q=80&w=800&auto=format&fit=crop',
     'clothing': 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=800&auto=format&fit=crop',
     'accessories': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop'
-  };
-
-  return fallbackImages[category] || fallbackImages.clothing;
-};
-
-// Add error handling for images
-const handleImageError = (event, category) => {
-  event.target.src = getFallbackImage(category);
-};
-
-// Computed properties for filtered products
-const filteredReadyToBuyProducts = computed(() => {
-  if (selectedCategory.value === 'all') return readyToBuyProducts.value;
-  return readyToBuyProducts.value.filter(product => product.category === selectedCategory.value);
-});
-
-const filteredCustomizableProducts = computed(() => {
-  if (selectedCategory.value === 'all') return customizableProducts.value;
-  return customizableProducts.value.filter(product => product.category === selectedCategory.value);
-});
-
-// Function to cycle through messages
-const startNotificationSlider = () => {
-  notificationInterval = setInterval(() => {
-    currentNotificationMessage.value = (currentNotificationMessage.value + 1) % notificationMessages.value.length;
-  }, 5000); // Change message every 5 seconds
-};
-
-// Stop the slider when component is unmounted
-onUnmounted(() => {
-  if (notificationInterval) {
-    clearInterval(notificationInterval);
   }
-});
 
-// Start the slider on mount
-onMounted(() => {
-  const savedCart = localStorage.getItem('cart');
-  const savedForLaterData = localStorage.getItem('savedForLater');
-  const recentlyViewedData = localStorage.getItem('recentlyViewed');
-  
-  if (savedCart) cart.value = JSON.parse(savedCart);
-  if (savedForLaterData) savedForLater.value = JSON.parse(savedForLaterData);
-  if (recentlyViewedData) recentlyViewed.value = JSON.parse(recentlyViewedData);
-  
-  initializeData();
-  startNotificationSlider(); // Start the slider
-});
+  return fallbackImages[category] || fallbackImages.clothing
+}
 
-// Icons from Lucide (lucide.dev) - using raw SVG paths
-const features = ref([
-  { title: 'Premiumdruck ab 1 Stück', description: 'Keine Mindestbestellmenge. Perfekt für Einzelstücke und Geschenke.', icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>' },
-  { title: 'Nachhaltige Textilien', description: 'Wir setzen auf Bio-Baumwolle und umweltfreundliche Materialien.', icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343m11.314 11.314a8 8 0 00-11.314-11.314"/>' },
-  { title: 'Versand in 2–4 Tagen', description: 'Schnelle Produktion und Lieferung mit unseren zuverlässigen Partnern.', icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>' },
-  { title: 'Made in Germany', description: 'Druck und Veredelung finden direkt bei uns in Deutschland statt.', icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M4 17v4M2 19h4M17 3v4M15 5h4M16 17v4M14 19h4"/>' }
-]);
+// Navigation handler
+const handleNavigation = (page) => {
+  currentPage.value = page
+  if (page !== 'ProductDetail') {
+    selectedProduct.value = null
+  }
+}
 
-const b2bBenefits = ref([
-  { title: 'Attraktive Mengenrabatte', description: 'Sparen Sie bei größeren Bestellungen für Ihr Team.', icon: '<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
-  { title: 'Persönliche Beratung', description: 'Ein fester Ansprechpartner begleitet Ihr Projekt.', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
-  { title: 'Kauf auf Rechnung', description: 'Bequeme und sichere Zahlung für Geschäftskunden.', icon: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' }
-]);
+// Product selection handler
+const handleSelectProduct = (product) => {
+  selectedProduct.value = product
+  currentPage.value = 'ProductDetail'
+  addToRecentlyViewed(product)
+}
 
 // Cart Methods
+const addToCart = (product) => {
+  cart.value.push({
+    ...product,
+    quantity: product.quantity || 1,
+    selectedSize: product.selectedSize || null,
+    selectedColor: product.selectedColor || null
+  })
+  localStorage.setItem('cart', JSON.stringify(cart.value))
+}
+
+const removeFromCart = (index) => {
+  cart.value.splice(index, 1)
+  localStorage.setItem('cart', JSON.stringify(cart.value))
+}
+
+const updateCartItemQuantity = ({ index, quantity }) => {
+  if (quantity < 1) return
+  cart.value[index].quantity = quantity
+  localStorage.setItem('cart', JSON.stringify(cart.value))
+}
+
+const clearCart = () => {
+  cart.value = []
+  localStorage.setItem('cart', JSON.stringify(cart.value))
+}
+
 const moveToSavedForLater = (index) => {
-  const item = cart.value[index];
-  savedForLater.value.push(item);
-  removeFromCart(index);
-  localStorage.setItem('savedForLater', JSON.stringify(savedForLater.value));
-};
+  const item = cart.value[index]
+  savedForLater.value.push(item)
+  removeFromCart(index)
+  localStorage.setItem('savedForLater', JSON.stringify(savedForLater.value))
+}
 
 const moveToCart = (index) => {
-  const item = savedForLater.value[index];
-  addToCart(item, item.quantity);
-  savedForLater.value.splice(index, 1);
-  localStorage.setItem('savedForLater', JSON.stringify(savedForLater.value));
-};
+  const item = savedForLater.value[index]
+  addToCart(item)
+  savedForLater.value.splice(index, 1)
+  localStorage.setItem('savedForLater', JSON.stringify(savedForLater.value))
+}
 
 const addToRecentlyViewed = (product) => {
-  const index = recentlyViewed.value.findIndex(p => p.id === product.id);
+  const index = recentlyViewed.value.findIndex(p => p.id === product.id)
   if (index > -1) {
-    recentlyViewed.value.splice(index, 1);
+    recentlyViewed.value.splice(index, 1)
   }
-  recentlyViewed.value.unshift(product);
+  recentlyViewed.value.unshift(product)
   if (recentlyViewed.value.length > 4) {
-    recentlyViewed.value.pop();
+    recentlyViewed.value.pop()
   }
-  localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed.value));
-};
+  localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed.value))
+}
 
 // Checkout Methods
 const proceedToCheckout = () => {
-  if (cart.value.length === 0) return;
-  currentPage.value = 'Checkout';
-  checkoutStep.value = 1;
-};
+  if (cart.value.length === 0) return
+  currentPage.value = 'Checkout'
+}
 
-const completeOrder = async () => {
+const handleCompleteOrder = async (orderData) => {
   try {
     // Here you would typically create the order in WooCommerce
-    const orderData = {
-      payment_method: paymentMethod.value,
-      payment_method_title: paymentMethod.value === 'credit_card' ? 'Kreditkarte' : 'PayPal',
-      set_paid: false,
-      billing: shippingAddress.value,
-      shipping: shippingAddress.value,
-      line_items: cart.value.map(item => ({
-        product_id: item.id,
-        quantity: item.quantity
-      })),
-      customer_note: orderNotes.value
-    };
+    console.log('Creating order:', orderData)
     
     // Clear cart after successful order
-    clearCart();
-    currentPage.value = 'OrderConfirmation';
+    clearCart()
+    currentPage.value = 'OrderConfirmation'
   } catch (error) {
-    console.error('Error creating order:', error);
+    console.error('Error creating order:', error)
   }
-};
+}
 
-// Watch for page changes to initialize canvas
-watch(() => currentPage.value, (newPage) => {
-  if (newPage === 'Creator') {
-    nextTick(() => {
-      initCanvas();
-    });
-  }
-});
+// Filter update handler
+const handleUpdateFilters = (filters) => {
+  // Handle filter updates here
+  console.log('Filters updated:', filters)
+  // You could refetch products with new filters
+}
 
-// Add video error handling
-const handleVideoError = (event) => {
-  // Replace video with a fallback image
-  const videoContainer = event.target.parentElement;
-  const fallbackImage = document.createElement('img');
-  fallbackImage.src = getFallbackImage('clothing');
-  fallbackImage.className = 'absolute inset-0 w-full h-full object-cover';
-  videoContainer.replaceChild(fallbackImage, event.target);
-};
-
-// Add logo error handling
-const handleLogoError = (event) => {
-  // Replace logo with text
-  const logoContainer = event.target.parentElement;
-  const textLogo = document.createElement('span');
-  textLogo.textContent = 'private-shirt.de';
-  textLogo.className = 'text-2xl font-bold text-[#D8127D]';
-  logoContainer.replaceChild(textLogo, event.target);
-};
-
-// Placeholder for shipping cost and discount
-const shippingCost = computed(() => {
-  return cartTotal.value >= 50 ? 0 : 4.99;
-});
-
-const itemsUntilDiscount = computed(() => {
-  const currentItems = cart.value.reduce((sum, item) => sum + item.quantity, 0);
-  // Assuming discount applies at 4 items for simplicity based on previous message
-  return Math.max(0, 4 - currentItems);
-});
-
-const remainingForFreeShipping = computed(() => {
-  return Math.max(0, 50 - cartTotal.value);
-});
-
-const freeShippingProgress = computed(() => {
-  return Math.min(100, (cartTotal.value / 50) * 100);
-});
-
-// Bestseller Carousel State
-const productsPerSlide = ref(4);
-const currentBestsellerPage = ref(0);
-const currentSummerPage = ref(0);
-const bestsellerProducts = computed(() => readyToBuyProducts.value.filter(p => p.tags.includes('bestseller')));
-const summerProducts = computed(() => readyToBuyProducts.value.filter(p => p.tags.includes('summer')));
-const paginatedBestsellers = computed(() => {
-  const start = currentBestsellerPage.value * productsPerSlide.value;
-  const end = start + productsPerSlide.value;
-  return bestsellerProducts.value.slice(start, end);
-});
-const paginatedSummerProducts = computed(() => {
-  const start = currentSummerPage.value * productsPerSlide.value;
-  const end = start + productsPerSlide.value;
-  return summerProducts.value.slice(start, end);
-});
-
-// Carousel Navigation Methods
-const nextBestsellerPage = () => {
-  const maxPage = Math.ceil(readyToBuyProducts.value.slice(0, 12).length / productsPerSlide.value) - 1;
-  if (currentBestsellerPage.value < maxPage) {
-    currentBestsellerPage.value++;
-  }
-};
-
-const prevBestsellerPage = () => {
-  if (currentBestsellerPage.value > 0) {
-    currentBestsellerPage.value--;
-  }
-};
-
-const nextSummerPage = () => {
-  const maxPage = Math.ceil(readyToBuyProducts.value.slice(4, 8).length / productsPerSlide.value) - 1;
-  if (currentSummerPage.value < maxPage) {
-    currentSummerPage.value++;
-  }
-};
-
-const prevSummerPage = () => {
-  if (currentSummerPage.value > 0) {
-    currentSummerPage.value--;
-  }
-};
-
-// Custom Creator CTA Section
-const handleCustomCreatorCTA = () => {
-  // Implement custom creator CTA logic
-  console.log('Custom Creator CTA clicked');
-};
-
-// For Corporate Clothing Section
-const handleCorporateClothing = () => {
-  // Implement corporate clothing logic
-  console.log('Corporate Clothing clicked');
-};
-
-// For Bachelor Party Section
-const handleBachelorParty = () => {
-  // Implement bachelor party logic
-  console.log('Bachelor Party clicked');
-};
-
-// Why Us? Section
-const handleWhyUs = () => {
-  // Implement why us logic
-  console.log('Why Us clicked');
-};
-
-// Testimonials Section
-const handleTestimonials = () => {
-  // Implement testimonials logic
-  console.log('Testimonials clicked');
-};
-
-// B2B & Creator CTA Sections
-const handleB2BAndCreatorCTA = () => {
-  // Implement B2B and creator CTA logic
-  console.log('B2B and Creator CTA clicked');
-};
-
-// Submenu hover state
-const fertigeProdukteHover = ref(false)
-const submenuCategories = [
-  { name: 'Männer', id: 'maenner' },
-  { name: 'Frauen', id: 'frauen' },
-  { name: 'Kinder', id: 'kinder' },
-  { name: 'Accessoires', id: 'accessoires' },
-  { name: 'Arbeitskleidung', id: 'arbeitskleidung' }
-]
-
-const totalSelectedQuantity = computed(() => {
-  if (!selectedProduct.value?.sizes) return quantity.value
-  return Object.values(sizeQuantities.value).reduce((sum, n) => sum + n, 0)
+// Lifecycle
+onMounted(() => {
+  const savedCart = localStorage.getItem('cart')
+  const savedForLaterData = localStorage.getItem('savedForLater')
+  const recentlyViewedData = localStorage.getItem('recentlyViewed')
+  
+  if (savedCart) cart.value = JSON.parse(savedCart)
+  if (savedForLaterData) savedForLater.value = JSON.parse(savedForLaterData)
+  if (recentlyViewedData) recentlyViewed.value = JSON.parse(recentlyViewedData)
+  
+  initializeData()
 })
-const totalSelectedPrice = computed(() => {
-  return totalSelectedQuantity.value * (parseFloat(selectedProduct.value?.price) || 0)
-})
-
 </script>
 
 <style>
@@ -1939,18 +484,6 @@ body {
 .btn-secondary-outline {
   @apply bg-transparent text-white border-2 border-white hover:bg-white hover:text-gray-900;
 }
-.nav-link {
-  @apply text-gray-600 hover:text-[#D8127D] font-medium cursor-pointer transition;
-}
-.footer-link {
-    @apply text-gray-400 hover:text-white transition-colors duration-200;
-}
-.category-tile {
-  @apply relative aspect-w-1 aspect-h-1 md:aspect-w-4 md:aspect-h-5 w-full rounded-lg overflow-hidden cursor-pointer shadow-lg;
-}
-.form-input {
-    @apply w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D8127D] focus:border-[#D8127D] transition;
-}
 
 /* Page Transition */
 .fade-enter-active,
@@ -1962,29 +495,13 @@ body {
   opacity: 0;
 }
 
-/* Notification Slider Transitions */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.5s ease;
-  position: absolute;
-  width: 100%;
-}
-.slide-fade-enter-from {
-  transform: translateY(100%);
-  opacity: 0;
-}
-.slide-fade-leave-to {
-  transform: translateY(-100%);
-  opacity: 0;
-}
-
 /* Base styles for SVGs injected via v-html to ensure they inherit color */
 svg {
-    stroke: currentColor;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
 }
 
 /* Update feature icons to use primary color */
@@ -2067,10 +584,5 @@ svg {
   opacity: 1;
   transform: translateX(0);
 }
-
-/* Top notification bar styles */
-.bg-gray-900.text-white.text-center.py-2.text-sm.font-medium.overflow-hidden.relative.h-8 {
-  background-color: #D8127D !important;
-  color: #fff !important;
-}
 </style>
+

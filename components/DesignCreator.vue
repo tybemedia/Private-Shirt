@@ -6,18 +6,18 @@
         <div class="bg-white rounded-xl shadow-lg p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold text-[#0a3a47]">Shirt Designer</h2>
-            <div class="flex gap-2">
-              <button @click="zoomIn" class="btn-secondary">
+            <div class="flex gap-2 relative z-20">
+              <button @click="zoomIn" class="btn-secondary" title="Zoom In">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
                 </svg>
               </button>
-              <button @click="zoomOut" class="btn-secondary">
+              <button @click="zoomOut" class="btn-secondary" title="Zoom Out">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v3m0-3H7"/>
                 </svg>
               </button>
-              <button @click="resetView" class="btn-secondary">
+              <button @click="resetView" class="btn-secondary" title="Zurücksetzen">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
@@ -32,33 +32,62 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </button>
-              <button @click="togglePlacementGuides" class="btn-secondary" :class="{'bg-[#D8127D] text-white': showPlacementGuides}" title="Placement Guides">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
-              </button>
-              <button @click="togglePolygonMode" class="btn-secondary" :class="{'bg-[#0a3a47] text-white': isDrawingPolygon}" title="Custom Polygon">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16M4 20L20 4"/>
-                </svg>
-              </button>
-              <button v-if="isDrawingPolygon" @click="finishPolygon" class="btn-secondary bg-green-600 text-white">Polygon fertig</button>
+              
+
+              <!-- Admin Controls simplified: single polygon button + save/clear -->
+              <div class="relative group" v-if="isAdminMode">
+                <button @click="handlePolygonButton" class="btn-secondary" :class="{'bg-[#0a3a47] text-white': isDrawingPolygon || isEditingArea}" :title="polygonButtonTitle">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16M4 20L20 4"/>
+                  </svg>
+                </button>
+                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none z-50">{{ polygonButtonHelp }}</span>
+              </div>
+
+              <div class="relative group" v-if="isAdminMode && customPolygon.length >= 3">
+                <button @click="toggleEditPolygon" class="btn-secondary" :class="{'bg-[#D8127D] text-white': isEditingArea}" title="Polygon bearbeiten">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.232-6.232a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-.828.515L7 15l1.657-3.999a2 2 0 01.343-.6z"/>
+                  </svg>
+                </button>
+                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none z-50">Punkte verschieben</span>
+              </div>
+
+              <div class="relative group">
+                <button @click="toggleAdminMode" class="btn-secondary" :class="{'bg-[#0a3a47] text-white': isAdminMode}" title="Admin Mode">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                  </svg>
+                </button>
+                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none z-50">Admin-Tools an/aus</span>
+              </div>
+              <div class="relative group" v-if="isAdminMode">
+                <button @click="savePlacementArea" class="btn-secondary" title="Area speichern">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4zM8 12h8"/>
+                  </svg>
+                </button>
+                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none z-50">Fläche speichern</span>
+              </div>
+              <div class="relative group" v-if="isAdminMode">
+                <button @click="clearPlacementArea" class="btn-secondary" title="Area löschen">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none z-50">Fläche löschen</span>
+              </div>
             </div>
           </div>
           
           <!-- Canvas Container -->
-          <div class="relative border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+          <div class="relative rounded-lg overflow-hidden">
             <canvas 
               ref="canvasRef" 
               class="w-full h-[600px] cursor-crosshair"
-              @mousedown="onMouseDown"
-              @mousemove="onMouseMove"
-              @mouseup="onMouseUp"
-              @wheel="onWheel"
               @keydown="onKeyDown"
               tabindex="0"
             ></canvas>
-            
             <!-- Warning Message -->
             <div v-if="showWarning" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-10">
               <div class="flex items-center gap-2">
@@ -68,38 +97,24 @@
                 <span class="text-sm font-medium">{{ warningMessage }}</span>
               </div>
             </div>
-            
-            <!-- Canvas Overlay for Instructions -->
-            <div v-if="!hasDesign" class="absolute inset-0 flex items-center justify-center">
-              <div class="text-center text-gray-500">
-                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                </svg>
-                <p class="text-lg font-semibold">Ziehen Sie Ihr Design hierher</p>
-                <p class="text-sm">oder klicken Sie auf "Bild hochladen"</p>
-                <div class="mt-4 text-xs text-gray-400">
-                  <p>⌘+Z: Rückgängig | ⌘+Y: Wiederholen | Delete: Löschen</p>
-                  <p>Alt+Drag: Verschieben | Ctrl+Scroll: Zoomen</p>
-                </div>
-              </div>
-            </div>
           </div>
+          <div class="mt-2 text-xs text-gray-500">Tipp: Objekte anklicken und mit der Maus ziehen, um sie zu bewegen.</div>
       </div>
       </div>
 
-      <!-- Design Tools Sidebar -->
+      <!-- Sidebar -->
       <div class="lg:col-span-4">
         <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-6">
           <!-- Product Info -->
-        <div>
-          <h1 class="text-2xl font-bold mb-1">Unisex Basic T-Shirt <span class="text-xs text-gray-400">#E150</span></h1>
-          <div class="text-sm text-[#D8127D] font-semibold mb-2 flex items-center gap-2">
+          <div>
+            <h1 class="text-2xl font-bold mb-1">{{ productName }} <span class="text-xs text-gray-400">#{{ productId }}</span></h1>
+            <div class="text-sm text-[#D8127D] font-semibold mb-2 flex items-center gap-2">
               <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M12 12a4 4 0 01-4-4V4a4 4 0 018 0v4a4 4 0 01-4 4z"/>
               </svg>
-            Partner-Artikel: <span class="text-gray-600">Frauen | Kinder | Teenager | Übergrößen</span>
+              Partner-Artikel: <span class="text-gray-600">Frauen | Kinder | Teenager | Übergrößen</span>
+            </div>
           </div>
-        </div>
 
           <!-- Upload Section -->
           <div>
@@ -111,13 +126,7 @@
                 </svg>
                 Bild hochladen
               </button>
-              <input 
-                ref="fileInput" 
-                type="file" 
-                accept="image/*,.svg" 
-                @change="handleFileUpload" 
-                class="hidden"
-              />
+              <input ref="fileInput" type="file" accept="image/*,.svg" @change="handleFileUpload" class="hidden" />
               <button @click="addText" class="btn w-full bg-[#ff7a00] hover:bg-[#ffa940] text-white">
                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -133,7 +142,7 @@
             </div>
           </div>
 
-          <!-- Templates Section -->
+          <!-- Templates -->
           <div>
             <h3 class="font-semibold mb-3 text-[#0a3a47]">Vorlagen</h3>
             <div class="grid grid-cols-2 gap-2">
@@ -152,29 +161,12 @@
             </div>
           </div>
 
-          <!-- Placement Guide Info -->
-          <div v-if="showPlacementGuides" class="bg-blue-50 rounded-lg p-3">
-            <h4 class="font-semibold text-sm text-[#0a3a47] mb-2">Design-Bereiche</h4>
-            <div class="text-xs space-y-1">
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-[#D8127D] rounded"></div>
-                <span>Front-Bereich (groß)</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-[#ff7a00] rounded"></div>
-                <span>Rücken-Bereich (mittel)</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-[#0a3a47] rounded"></div>
-                <span>Ärmel-Bereiche (klein)</span>
-              </div>
-            </div>
-          </div>
+          
 
-        <!-- Color Swatches -->
-        <div>
+          <!-- Color Swatches -->
+          <div>
             <div class="font-semibold mb-2 text-[#0a3a47]">Shirt Farbe</div>
-          <div class="grid grid-cols-8 gap-2 mb-2">
+            <div class="grid grid-cols-8 gap-2 mb-2">
               <button 
                 v-for="(color, i) in colors" 
                 :key="color.name" 
@@ -183,29 +175,24 @@
                 :class="['w-7 h-7 rounded-full border-2', selectedColor === i ? 'border-[#D8127D] ring-2 ring-[#ffd44d]' : 'border-gray-200']" 
                 :style="{backgroundColor: color.hex}"
               ></button>
+            </div>
+            <div class="text-xs text-gray-500">Gewählte Farbe: <span class="font-semibold text-[#0a3a47]">{{ colors[selectedColor].name }}</span></div>
           </div>
-          <div class="text-xs text-gray-500">Gewählte Farbe: <span class="font-semibold text-[#0a3a47]">{{ colors[selectedColor].name }}</span></div>
-        </div>
 
           <!-- Design Tools -->
           <div v-if="selectedObject">
             <h3 class="font-semibold mb-3 text-[#0a3a47]">Design bearbeiten</h3>
             <div class="space-y-3">
-              <!-- Layer Controls -->
               <div class="flex gap-2">
-                <button @click="bringToFront" class="btn-secondary flex-1">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-                  </svg>
+                <button @click="bringToFront" class="btn-secondary flex-1" title="Nach vorne">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                 </button>
-                <button @click="sendToBack" class="btn-secondary flex-1">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                  </svg>
+                <button @click="sendToBack" class="btn-secondary flex-1" title="Nach hinten">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <button @click="deleteObject" class="btn-secondary">
+                <button @click="deleteObject" class="btn-secondary" title="Löschen">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                   </svg>
                 </button>
               </div>
@@ -214,23 +201,11 @@
               <div v-if="selectedObject.type === 'text'" class="space-y-3">
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1">Text</label>
-                  <input 
-                    v-model="selectedObject.text" 
-                    @input="updateText"
-                    type="text" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#D8127D]"
-                  />
+                  <input v-model="selectedObject.text" @input="updateText" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#D8127D]" />
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1">Schriftgröße</label>
-                  <input 
-                    v-model="selectedObject.fontSize" 
-                    @input="updateText"
-                    type="range" 
-                    min="12" 
-                    max="72" 
-                    class="w-full"
-                  />
+                  <input v-model="selectedObject.fontSize" @input="updateText" type="range" min="12" max="72" class="w-full"/>
                   <div class="text-xs text-gray-500 text-center">{{ selectedObject.fontSize }}px</div>
                 </div>
                 <div>
@@ -252,44 +227,35 @@
               <div v-if="selectedObject.type === 'image'" class="space-y-3">
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1">Transparenz</label>
-                  <input 
-                    v-model="selectedObject.opacity" 
-                    @input="updateImage"
-                    type="range" 
-                    min="0.1" 
-                    max="1" 
-                    step="0.1" 
-                    class="w-full"
-                  />
+                  <input v-model="selectedObject.opacity" @input="updateImage" type="range" min="0.1" max="1" step="0.1" class="w-full"/>
                   <div class="text-xs text-gray-500 text-center">{{ Math.round(selectedObject.opacity * 100) }}%</div>
                 </div>
               </div>
             </div>
           </div>
 
-        <!-- Product Info -->
-        <div>
-          <details class="mb-2">
-            <summary class="cursor-pointer font-semibold text-[#D8127D]">Produktinformationen</summary>
-            <div class="text-xs text-gray-600 mt-2">100% Baumwolle, Regular Fit, B&C Collection, waschbar bis 40°C, Unisex.</div>
-          </details>
-          <details>
-            <summary class="cursor-pointer font-semibold text-[#D8127D]">Aktueller Lagerbestand</summary>
-            <div class="text-xs text-gray-600 mt-2">Viele Größen und Farben sofort verfügbar.</div>
-          </details>
-        </div>
-
-        <!-- Price & Delivery -->
-        <div class="bg-gray-50 rounded-lg p-4 flex flex-col gap-2">
-          <div class="flex justify-between items-center">
-            <span class="font-semibold text-[#0a3a47]">Gesamtsumme</span>
-            <span class="text-lg font-bold text-[#D8127D]">11,90 €</span>
+          <!-- Product Info -->
+          <div>
+            <details class="mb-2">
+              <summary class="cursor-pointer font-semibold text-[#D8127D]">Produktinformationen</summary>
+              <div class="text-xs text-gray-600 mt-2">{{ productDescription || 'Produktbeschreibung folgt.' }}</div>
+            </details>
+            <details>
+              <summary class="cursor-pointer font-semibold text-[#D8127D]">Aktueller Lagerbestand</summary>
+              <div class="text-xs text-gray-600 mt-2">Viele Größen und Farben sofort verfügbar.</div>
+            </details>
           </div>
-          <div class="text-xs text-gray-500">inkl. MwSt. EU / inkl. Druckkosten / zzgl. <a href="#" class="underline text-[#D8127D]">Versand</a></div>
-          <div class="text-sm text-[#0a3a47] font-semibold mt-2">Lieferung in der Regel innerhalb von 4 Werktagen</div>
-        </div>
 
-        <!-- Action Button -->
+          <!-- Price & Delivery -->
+          <div class="bg-gray-50 rounded-lg p-4 flex flex-col gap-2">
+            <div class="flex justify-between items-center">
+              <span class="font-semibold text-[#0a3a47]">Gesamtsumme</span>
+              <span class="text-lg font-bold text-[#D8127D]">11,90 €</span>
+            </div>
+            <div class="text-xs text-gray-500">inkl. MwSt. EU / inkl. Druckkosten / zzgl. <a href="#" class="underline text-[#D8127D]">Versand</a></div>
+            <div class="text-sm text-[#0a3a47] font-semibold mt-2">Lieferung in der Regel innerhalb von 4 Werktagen</div>
+          </div>
+
           <button class="btn w-full bg-[#ff7a00] hover:bg-[#ffa940] text-white text-lg font-bold py-3 rounded-lg mt-2">
             Größe und Menge wählen
           </button>
@@ -300,26 +266,35 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
+import { useWooCommerce } from '~/composables/useWooCommerce.js'
 
-// Canvas and Fabric.js setup
+const props = defineProps({
+  productId: { type: [String, Number], default: 'E150' }
+})
+
 const canvasRef = ref(null)
 const fileInput = ref(null)
 let canvas = null
 let fabric = null
 
-// State
-const selectedColor = ref(2)
-const selectedObject = ref(null)
-const hasDesign = ref(false)
-const showPlacementGuides = ref(true)
-const showWarning = ref(false)
-const warningMessage = ref('')
-const customPolygon = ref([]) // Array of {x, y}
-const isDrawingPolygon = ref(false)
-let polygonOverlay = null
+// Design-Layer + Clip
+let designLayer = null
+let clipPolygon = null
+const lastValidTransform = new WeakMap()
 
-// Shirt colors
+// Admin/Polygon
+const isAdminMode = ref(false)
+const isEditingArea = ref(false)
+const isDrawingPolygon = ref(false)
+const customPolygon = ref([]) // [{x,y}]
+let polygonOverlay = null
+let polylineOverlay = null
+const pointMarkers = []
+let polygonControlPoints = []
+
+// Shirt Colors
+const selectedColor = ref(2)
 const colors = [
   { name: 'Weiß', hex: '#f5f5f5' },
   { name: 'Schwarz', hex: '#222' },
@@ -329,17 +304,306 @@ const colors = [
   { name: 'Grün', hex: '#6bbf59' },
   { name: 'Rot', hex: '#e53935' },
   { name: 'Blau', hex: '#1976d2' },
-  { name: 'Grau', hex: '#bdbdbd' },
-  { name: 'Navy', hex: '#0a3a47' },
-  { name: 'Orange', hex: '#ff7a00' },
-  { name: 'Lila', hex: '#8e24aa' },
-  { name: 'Beige', hex: '#f5e9da' },
-  { name: 'Oliv', hex: '#808000' },
-  { name: 'Bordeaux', hex: '#800020' },
-  { name: 'Türkis', hex: '#30d5c8' },
 ]
 
-// Text colors
+// UI
+const selectedObject = ref(null)
+const hasDesign = ref(false)
+// Removed placement guide UI
+const showWarning = ref(false)
+const warningMessage = ref('')
+
+// Helpers
+const ensureFabric = async () => {
+  if (!fabric) {
+    const fm = await import('fabric')
+    fabric = fm.default || fm
+  }
+  return fabric
+}
+
+// Init
+const initCanvas = async () => {
+  if (!canvasRef.value) return
+  await ensureFabric()
+
+  canvas = new fabric.Canvas(canvasRef.value, {
+    width: canvasRef.value.offsetWidth,
+    height: 600,
+    backgroundColor: '#fff',
+    selection: true,
+    preserveObjectStackingOrder: true
+  })
+  canvas.perPixelTargetFind = false
+  canvas.targetFindTolerance = 10
+
+  await setShirtBackground()
+
+  // Hinweis: Wir fügen Design-Objekte direkt zum Canvas hinzu
+  designLayer = null
+
+  addShirtOutline()
+
+  // Mouse handlers: polygon point placement or panning (Alt)
+  canvas.on('mouse:down', (opt) => {
+    const e = opt.e
+    if (isDrawingPolygon.value) {
+      const pointer = canvas.getPointer(e)
+      customPolygon.value.push({ x: pointer.x, y: pointer.y })
+      drawPointMarkers()
+      drawPolylineOverlay()
+      drawPolygonOverlay()
+      return
+    }
+    if (e.altKey) {
+      isDragging = true
+      lastPosX = e.clientX
+      lastPosY = e.clientY
+      canvas.defaultCursor = 'grabbing'
+    }
+  })
+  canvas.on('mouse:move', (opt) => {
+    if (!isDragging) return
+    const e = opt.e
+    const dx = e.clientX - lastPosX
+    const dy = e.clientY - lastPosY
+    const vpt = canvas.viewportTransform
+    vpt[4] += dx; vpt[5] += dy
+    canvas.setViewportTransform(vpt)
+    lastPosX = e.clientX; lastPosY = e.clientY
+  })
+  canvas.on('mouse:up', () => { isDragging = false; canvas.defaultCursor = 'default' })
+  canvas.on('mouse:wheel', (opt) => {
+    const e = opt.e
+    if (!e.ctrlKey) return
+    e.preventDefault()
+    const z = canvas.getZoom()
+    const nz = z * (1 - e.deltaY / 1000)
+    canvas.setZoom(Math.min(Math.max(nz, 0.5), 3))
+    canvas.requestRenderAll()
+  })
+
+  // Auswahl / Manipulation
+  canvas.on('selection:created', onSelection)
+  canvas.on('selection:updated', onSelection)
+  canvas.on('selection:cleared', onSelectionCleared)
+  canvas.on('object:moving', (e) => validateAndMaybeRevert(e.target))
+  canvas.on('object:scaling', (e) => validateAndMaybeRevert(e.target))
+  canvas.on('object:rotating', (e) => validateAndMaybeRevert(e.target))
+
+  setupDragAndDrop()
+}
+
+// Background (Mockup)
+async function loadBackgroundViaFabric(url, useCors) {
+  return new Promise((resolve, reject) => {
+    if (!fabric || !canvas || !url) { resolve(false); return }
+    const options = useCors ? { crossOrigin: 'anonymous' } : undefined
+    fabric.Image.fromURL(url, (img) => {
+      if (!img) { resolve(false); return }
+      try {
+        const scaleX = canvas.width / (img.width || 1)
+        const scaleY = canvas.height / (img.height || 1)
+        canvas.setBackgroundImage(
+          img,
+          () => {
+            // Fallback: add as bottom layer if background didn’t take
+            if (!canvas.backgroundImage) {
+              img.set({ originX: 'left', originY: 'top', left: 0, top: 0, selectable: false, evented: false, scaleX, scaleY, name: 'BG_IMAGE' })
+              canvas.add(img)
+              canvas.sendToBack(img)
+            }
+            canvas.requestRenderAll()
+          },
+          { originX: 'left', originY: 'top', left: 0, top: 0, scaleX, scaleY }
+        )
+        resolve(true)
+      } catch (e) { reject(e) }
+    }, options)
+  })
+}
+
+const setShirtBackground = async () => {
+  const stored = (typeof window !== 'undefined' && window.localStorage) ? window.localStorage.getItem(`product:${props.productId}:image`) : null
+  const url = stored || 'https://png.pngtree.com/png-vector/20230902/ourmid/pngtree-black-t-shirt-mockup-hanging-realistic-t-shirt-png-image_9823288.png'
+  // Try with CORS first; if it fails, fallback without CORS so at least it displays
+  const okWithCors = await loadBackgroundViaFabric(url, true)
+  if (!okWithCors) await loadBackgroundViaFabric(url, false)
+}
+
+// Product info
+const selectedProduct = ref(null)
+const productName = computed(() => selectedProduct.value?.name || 'Unisex Basic T-Shirt')
+const productDescription = computed(() => {
+  const raw = selectedProduct.value?.description || ''
+  try { return raw.replace(/<[^>]*>/g, '').trim() } catch { return raw }
+})
+
+const { wooService, formatProduct } = useWooCommerce()
+
+async function loadBackgroundViaBlob(url) {
+  try {
+    const res = await fetch(url, { mode: 'cors' })
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const ok = await loadBackgroundViaFabric(objectUrl, false)
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 5000)
+    return ok
+  } catch {
+    return false
+  }
+}
+
+async function updateProductAndBackground(id) {
+  if (!id || !canvas) return
+  try {
+    const raw = await wooService.fetchProduct(String(id))
+    selectedProduct.value = formatProduct(raw)
+    const bg = selectedProduct.value.gallery?.[0] || selectedProduct.value.image
+    if (bg) {
+      let ok = await loadBackgroundViaFabric(bg, true)
+      if (!ok) ok = await loadBackgroundViaBlob(bg)
+      if (!ok) ok = await loadBackgroundViaFabric(bg, false)
+      try { if (typeof window !== 'undefined') window.localStorage.setItem(`product:${id}:image`, bg) } catch {}
+    }
+  } catch {}
+}
+
+watch(() => props.productId, (id) => { updateProductAndBackground(id) })
+
+const addShirtOutline = () => {
+  if (!fabric) return
+  // Outlines removed per request; keep only design objects and background
+  bringDesignObjectsToFront()
+}
+
+// Drag & Drop
+const setupDragAndDrop = () => {
+  const el = canvasRef.value
+  el.addEventListener('dragover', (e) => { e.preventDefault(); el.style.borderColor = '#D8127D' })
+  el.addEventListener('dragleave', (e) => { e.preventDefault(); el.style.borderColor = '#e5e7eb' })
+  el.addEventListener('drop', async (e) => {
+    e.preventDefault(); el.style.borderColor = '#e5e7eb'
+    const files = e.dataTransfer.files
+    if (files.length > 0) await handleFile(files[0])
+  })
+}
+
+// File Handling
+const openFileInput = () => fileInput.value.click()
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0]
+  if (file) await handleFile(file)
+}
+const handleFile = async (file) => {
+  const fabricInstance = await ensureFabric()
+  const reader = new FileReader()
+
+  if (file.type.startsWith('image/')) {
+    reader.onload = (e) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        const fImg = new fabricInstance.Image(img, {
+          left: canvas.width / 2,
+          top: canvas.height / 2,
+          originX: 'center',
+          originY: 'center'
+        })
+        addImageToCanvas(fImg)
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  } else if (file.name.endsWith('.svg')) {
+    reader.onload = (e) => {
+      const svgText = e.target.result
+      fabricInstance.loadSVGFromString(svgText, (objects, options) => {
+        const svgGroup = fabricInstance.util.groupSVGElements(objects, options)
+        addImageToCanvas(svgGroup)
+      })
+    }
+    reader.readAsText(file)
+  }
+}
+
+const addObjectToDesignLayer = (obj) => {
+  obj.set({ selectable: true, evented: true })
+  obj.set({ name: 'DESIGN_OBJECT' })
+  canvas.add(obj)
+  obj.setCoords()
+  canvas.setActiveObject(obj)
+  canvas.requestRenderAll()
+  hasDesign.value = true
+  rememberTransform(obj)
+}
+
+const addImageToCanvas = (fabricObject) => {
+  const maxSize = 200
+  const scaleX = maxSize / (fabricObject.width || maxSize)
+  const scaleY = maxSize / (fabricObject.height || maxSize)
+  const scale = Math.min(scaleX, scaleY, 1)
+
+  fabricObject.set({
+    left: canvas.width / 2,
+    top: canvas.height / 2,
+    originX: 'center',
+    originY: 'center',
+    scaleX: scale,
+    scaleY: scale
+  })
+  addObjectToDesignLayer(fabricObject)
+  updateObjectBorder(fabricObject)
+}
+
+// Text
+const addText = async () => {
+  const f = await ensureFabric()
+  const text = new f.Text('Text eingeben', {
+    left: canvas.width / 2,
+    top: canvas.height / 2,
+    fontSize: 24,
+    fill: '#000',
+    fontFamily: 'Arial',
+    originX: 'center',
+    originY: 'center'
+  })
+  addObjectToDesignLayer(text)
+  updateObjectBorder(text)
+}
+const addSampleText = async () => {
+  const f = await ensureFabric()
+  const text = new f.Text('Sample Text', {
+    left: canvas.width / 2, top: canvas.height / 2,
+    fontSize: 30, fill: '#000', fontFamily: 'Arial',
+    originX: 'center', originY: 'center'
+  })
+  addObjectToDesignLayer(text)
+  updateObjectBorder(text)
+}
+const addSampleLogo = async () => {
+  const f = await ensureFabric()
+  const circle = new f.Circle({
+    left: canvas.width / 2, top: canvas.height / 2,
+    radius: 30, fill: '#D8127D', stroke: '#0a3a47', strokeWidth: 2,
+    originX: 'center', originY: 'center'
+  })
+  const text = new f.Text('LOGO', {
+    left: canvas.width / 2, top: canvas.height / 2,
+    fontSize: 12, fill: '#fff', fontWeight: 'bold',
+    originX: 'center', originY: 'center'
+  })
+  addObjectToDesignLayer(circle)
+  addObjectToDesignLayer(text)
+  updateObjectBorder(circle)
+}
+
+// Colors
+const changeShirtColor = (index) => {
+  selectedColor.value = index
+  canvas.backgroundColor = colors[index].hex
+  canvas.renderAll()
+}
 const textColors = [
   { name: 'Schwarz', hex: '#000000' },
   { name: 'Weiß', hex: '#ffffff' },
@@ -355,1062 +619,547 @@ const textColors = [
   { name: 'Türkis', hex: '#30d5c8' },
 ]
 
-// Helper function to ensure fabric is loaded
-const ensureFabric = async () => {
-  if (!fabric) {
-    const fabricModule = await import('fabric')
-    fabric = fabricModule.default || fabricModule
-  }
-  return fabric
+// ---------- Utility ----------
+function bringToTop(obj) {
+  if (!canvas || !obj) return
+  canvas.remove(obj)
+  canvas.add(obj)
+  canvas.requestRenderAll()
 }
 
-// Initialize canvas
-const initCanvas = async () => {
-  if (!canvasRef.value) {
-    console.warn('Canvas ref not available')
-    return
-  }
-
-  try {
-    // Dynamically import fabric.js to avoid SSR issues
-    if (!fabric) {
-      const fabricModule = await import('fabric')
-      fabric = fabricModule.default || fabricModule
-      console.log('Fabric.js loaded successfully:', fabric)
-    }
-
-    // Create canvas
-    canvas = new fabric.Canvas(canvasRef.value, {
-      width: canvasRef.value.offsetWidth,
-      height: 600,
-      backgroundColor: '#fff',
-      selection: true,
-      preserveObjectStackingOrder: true
-    })
-
-    // Load shirt PNG as background and create mask
-    await setShirtBackgroundAndMask()
-
-    // Add shirt outline with placement guides (optional, for visual help)
-    addShirtOutline()
-
-    // Event listeners
-    canvas.on('selection:created', onSelection)
-    canvas.on('selection:updated', onSelection)
-    canvas.on('selection:cleared', onSelectionCleared)
-    canvas.on('object:modified', onObjectModified)
-    canvas.on('object:added', onObjectAdded)
-    canvas.on('object:removed', onObjectRemoved)
-    canvas.on('object:moving', onObjectMoving)
-    canvas.on('object:scaling', onObjectScaling)
-    canvas.on('object:rotating', onObjectRotating)
-
-    // Enable drag and drop
-    setupDragAndDrop()
-    
-    console.log('Canvas initialized successfully')
-  } catch (error) {
-    console.error('Error initializing canvas:', error)
-  }
+function bringDesignObjectsToFront() {
+  if (!canvas) return
+  const designObjects = canvas.getObjects().filter(o => o.name === 'DESIGN_OBJECT')
+  designObjects.forEach(o => canvas.bringToFront(o))
+  canvas.requestRenderAll()
 }
 
-// Set shirt PNG as background and create mask
-const setShirtBackgroundAndMask = async () => {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      // Set as fabric background
-      const fabricImg = new fabric.Image(img, {
-        left: 0,
-        top: 0,
-        originX: 'left',
-        originY: 'top',
-        selectable: false,
-        evented: false,
-        scaleX: canvas.width / img.width,
-        scaleY: canvas.height / img.height
-      })
-      canvas.backgroundImage = fabricImg;
-      canvas.requestRenderAll();
-
-      // Create mask canvas
-      maskCanvas = document.createElement('canvas')
-      maskCanvas.width = canvas.width
-      maskCanvas.height = canvas.height
-      maskCtx = maskCanvas.getContext('2d')
-      // Draw scaled PNG to mask
-      maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height)
-      maskCtx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height)
-      resolve()
-    }
-    img.onerror = (e) => {
-      console.error('Failed to load shirt PNG', e)
-      reject(e)
-    }
-    img.src = 'https://png.pngtree.com/png-vector/20230902/ourmid/pngtree-black-t-shirt-mockup-hanging-realistic-t-shirt-png-image_9823288.png' // Use a local image in public/ for reliable loading
-  })
+function bringPolygonUIToFront() {
+  if (!canvas) return
+  // Bring polygon overlay, polyline, markers, and control points above everything
+  if (polygonOverlay) canvas.bringToFront(polygonOverlay)
+  if (polylineOverlay) canvas.bringToFront(polylineOverlay)
+  pointMarkers.forEach(p => canvas.bringToFront(p))
+  if (Array.isArray(polygonControlPoints)) polygonControlPoints.forEach(cp => canvas.bringToFront(cp))
+  canvas.requestRenderAll()
 }
 
-// Add shirt outline with placement guides
-const addShirtOutline = () => {
-  if (!fabric) return
-  
-  try {
-    // Remove all non-user objects (guides, outlines) first
-    const objects = canvas.getObjects()
-    objects.forEach(obj => {
-      if (obj.selectable === false && obj.evented === false) {
-        canvas.remove(obj)
-      }
-    })
-
-    // Shirt body (outline, not background)
-    const body = new fabric.Rect({
-      left: canvas.width / 2 - 150,
-      top: 50,
-      width: 300,
-      height: 400,
-      fill: 'transparent',
-      stroke: '#333',
-      strokeWidth: 2,
-      rx: 20,
-      ry: 20,
-      selectable: false,
-      evented: false
-    })
-
-    // Sleeves
-    const leftSleeve = new fabric.Rect({
-      left: canvas.width / 2 - 180,
-      top: 100,
-      width: 60,
-      height: 80,
-      fill: 'transparent',
-      stroke: '#333',
-      strokeWidth: 2,
-      rx: 30,
-      ry: 30,
-      selectable: false,
-      evented: false
-    })
-
-    const rightSleeve = new fabric.Rect({
-      left: canvas.width / 2 + 120,
-      top: 100,
-      width: 60,
-      height: 80,
-      fill: 'transparent',
-      stroke: '#333',
-      strokeWidth: 2,
-      rx: 30,
-      ry: 30,
-      selectable: false,
-      evented: false
-    })
-
-    // Placement guides (all selectable: false, evented: false)
-    const frontGuide = new fabric.Rect({
-      left: canvas.width / 2 - 120,
-      top: 80,
-      width: 240,
-      height: 320,
-      fill: 'rgba(212, 18, 125, 0.1)',
-      stroke: '#D8127D',
-      strokeWidth: 1,
-      strokeDashArray: [5, 5],
-      rx: 10,
-      ry: 10,
-      selectable: false,
-      evented: false
-    })
-    const backGuide = new fabric.Rect({
-      left: canvas.width / 2 - 100,
-      top: 100,
-      width: 200,
-      height: 280,
-      fill: 'rgba(255, 122, 0, 0.1)',
-      stroke: '#ff7a00',
-      strokeWidth: 1,
-      strokeDashArray: [5, 5],
-      rx: 8,
-      ry: 8,
-      selectable: false,
-      evented: false
-    })
-    const leftSleeveGuide = new fabric.Rect({
-      left: canvas.width / 2 - 170,
-      top: 110,
-      width: 40,
-      height: 60,
-      fill: 'rgba(10, 58, 71, 0.1)',
-      stroke: '#0a3a47',
-      strokeWidth: 1,
-      strokeDashArray: [3, 3],
-      rx: 5,
-      ry: 5,
-      selectable: false,
-      evented: false
-    })
-    const rightSleeveGuide = new fabric.Rect({
-      left: canvas.width / 2 + 130,
-      top: 110,
-      width: 40,
-      height: 60,
-      fill: 'rgba(10, 58, 71, 0.1)',
-      stroke: '#0a3a47',
-      strokeWidth: 1,
-      strokeDashArray: [3, 3],
-      rx: 5,
-      ry: 5,
-      selectable: false,
-      evented: false
-    })
-    const frontLabel = new fabric.Text('Front Design Area', {
-      left: canvas.width / 2,
-      top: 60,
-      fontSize: 12,
-      fill: '#D8127D',
-      fontFamily: 'Arial',
-      fontWeight: 'bold',
-      originX: 'center',
-      originY: 'center',
-      selectable: false,
-      evented: false
-    })
-    const backLabel = new fabric.Text('Back Design Area', {
-      left: canvas.width / 2,
-      top: 420,
-      fontSize: 12,
-      fill: '#ff7a00',
-      fontFamily: 'Arial',
-      fontWeight: 'bold',
-      originX: 'center',
-      originY: 'center',
-      selectable: false,
-      evented: false
-    })
-    const sleeveLabel = new fabric.Text('Sleeve Areas', {
-      left: canvas.width / 2,
-      top: 480,
-      fontSize: 10,
-      fill: '#0a3a47',
-      fontFamily: 'Arial',
-      fontWeight: 'bold',
-      originX: 'center',
-      originY: 'center',
-      selectable: false,
-      evented: false
-    })
-
-    // Add all guides and outlines first
-    canvas.add(body)
-    canvas.add(leftSleeve)
-    canvas.add(rightSleeve)
-    if (showPlacementGuides.value) {
-      canvas.add(frontGuide)
-      canvas.add(backGuide)
-      canvas.add(leftSleeveGuide)
-      canvas.add(rightSleeveGuide)
-      canvas.add(frontLabel)
-      canvas.add(backLabel)
-      canvas.add(sleeveLabel)
-    }
-
-    // Move all user objects to the top of the stack
-    canvas.getObjects().forEach(obj => {
-      if (obj.selectable !== false || obj.evented !== false) {
-        canvas.bringToFront(obj)
-      }
-    })
-
-    console.log('Shirt outline with placement guides added successfully')
-  } catch (error) {
-    console.error('Error adding shirt outline:', error)
-  }
-}
-
-// Setup drag and drop
-const setupDragAndDrop = () => {
-  const canvasElement = canvasRef.value
-
-  canvasElement.addEventListener('dragover', (e) => {
-    e.preventDefault()
-    canvasElement.style.borderColor = '#D8127D'
-  })
-
-  canvasElement.addEventListener('dragleave', (e) => {
-    e.preventDefault()
-    canvasElement.style.borderColor = '#e5e7eb'
-  })
-
-  canvasElement.addEventListener('drop', async (e) => {
-    e.preventDefault()
-    canvasElement.style.borderColor = '#e5e7eb'
-    
-    const files = e.dataTransfer.files
-    if (files.length > 0) {
-      await handleFile(files[0])
-    }
-  })
-}
-
-// File handling
-const openFileInput = () => {
-  fileInput.value.click()
-}
-
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    await handleFile(file)
-  }
-}
-
-const handleFile = async (file) => {
-  if (!file) {
-    console.warn('No file provided')
-    return
-  }
-
-  try {
-    const fabricInstance = await ensureFabric()
-    console.log('Fabric instance loaded for file handling:', fabricInstance)
-    
-    const reader = new FileReader()
-    
-    reader.onerror = (error) => {
-      console.error('Error reading file:', error)
-    }
-    
-    if (file.type.startsWith('image/')) {
-      console.log('Processing image file:', file.type, file.name)
-      reader.onload = (e) => {
-        try {
-          console.log('Creating fabric image from URL')
-          const imgUrl = e.target.result
-          console.log('Image URL created:', imgUrl.substring(0, 50) + '...')
-          
-          // Use native Image constructor approach which is more reliable
-          const img = new Image()
-          img.crossOrigin = 'anonymous'
-          
-          img.onload = () => {
-            console.log('Native image loaded successfully, dimensions:', img.width, 'x', img.height)
-            try {
-              const fabricImg = new fabricInstance.Image(img, {
-                left: canvas.width / 2,
-                top: canvas.height / 2,
-                originX: 'center',
-                originY: 'center'
-              })
-              console.log('Fabric image created:', fabricImg)
-              addImageToCanvas(fabricImg)
-            } catch (fabricError) {
-              console.error('Error creating fabric image:', fabricError)
-            }
-          }
-          
-          img.onerror = (error) => {
-            console.error('Error loading native image:', error)
-          }
-          
-          img.src = imgUrl
-          
-        } catch (error) {
-          console.error('Error in image processing:', error)
-        }
-      }
-      reader.readAsDataURL(file)
-    } else if (file.name.endsWith('.svg')) {
-      console.log('Processing SVG file:', file.name)
-      reader.onload = (e) => {
-        try {
-          console.log('Loading SVG from URL')
-          fabricInstance.loadSVGFromURL(e.target.result, (objects, options) => {
-            console.log('SVG loaded, objects:', objects)
-            if (objects.length > 0) {
-              const svgGroup = fabricInstance.util.groupSVGElements(objects, options)
-              console.log('SVG group created:', svgGroup)
-              addImageToCanvas(svgGroup)
-            } else {
-              console.warn('No SVG objects found')
-            }
-          })
-        } catch (error) {
-          console.error('Error loading SVG:', error)
-        }
-      }
-      reader.readAsText(file)
-    } else {
-      console.warn('Unsupported file type:', file.type)
-    }
-  } catch (error) {
-    console.error('Error in handleFile:', error)
-  }
-}
-
-const addImageToCanvas = (fabricObject) => {
-  try {
-    if (!fabricObject) {
-      console.warn('No fabric object provided to addImageToCanvas')
-      return
-    }
-
-    console.log('Adding image to canvas:', fabricObject)
-    console.log('Fabric object properties:', {
-      width: fabricObject.width,
-      height: fabricObject.height,
-      type: fabricObject.type,
-      left: fabricObject.left,
-      top: fabricObject.top
-    })
-    
-    // Check if the object has valid dimensions
-    if (!fabricObject.width || !fabricObject.height) {
-      console.warn('Fabric object has no dimensions, setting defaults')
-      fabricObject.set({
-        width: 200,
-        height: 200
-      })
-    }
-    
-    // Scale and position the object
-    const maxSize = 200
-    const scaleX = maxSize / fabricObject.width
-    const scaleY = maxSize / fabricObject.height
-    const scale = Math.min(scaleX, scaleY, 1) // Don't scale up, only down
-    
-    console.log('Scaling object with scale:', scale, 'original size:', fabricObject.width, 'x', fabricObject.height)
-    
-    fabricObject.set({
-      left: canvas.width / 2,
-      top: canvas.height / 2,
-      originX: 'center',
-      originY: 'center',
-      scaleX: scale,
-      scaleY: scale
-    })
-
-    console.log('Adding object to canvas with properties:', {
-      left: fabricObject.left,
-      top: fabricObject.top,
-      scaleX: fabricObject.scaleX,
-      scaleY: fabricObject.scaleY
-    })
-
-    // Add to canvas
-    canvas.add(fabricObject)
-    console.log('Object added to canvas')
-    
-    // Set as active object
-    canvas.setActiveObject(fabricObject)
-    console.log('Object set as active')
-    
-    // Check placement and update border
-    updateObjectBorder(fabricObject)
-    
-    // Render canvas
-    canvas.renderAll()
-    console.log('Canvas rendered')
-    
-    hasDesign.value = true
-    
-    console.log('Image added to canvas successfully')
-    console.log('Canvas objects count:', canvas.getObjects().length)
-    
-    // Force a re-render after a short delay to ensure everything is displayed
-    setTimeout(() => {
-      canvas.renderAll()
-      console.log('Canvas re-rendered after timeout')
-    }, 100)
-    
-  } catch (error) {
-    console.error('Error adding image to canvas:', error)
-    console.error('Error stack:', error.stack)
-  }
-}
-
-// Text handling
-const addText = async () => {
-  const fabricInstance = await ensureFabric()
-  
-  const text = new fabricInstance.Text('Text eingeben', {
-    left: canvas.width / 2,
-    top: canvas.height / 2,
-    fontSize: 24,
-    fill: '#000000',
-    fontFamily: 'Arial',
-    originX: 'center',
-    originY: 'center'
-  })
-
-  canvas.add(text)
-  canvas.setActiveObject(text)
-  updateObjectBorder(text)
-  canvas.renderAll()
-  hasDesign.value = true
-}
-
-// Sample designs
-const addSampleText = async () => {
-  const fabricInstance = await ensureFabric()
-  
-  const text = new fabricInstance.Text('Sample Text', {
-    left: canvas.width / 2,
-    top: canvas.height / 2,
-    fontSize: 30,
-    fill: '#000000',
-    fontFamily: 'Arial',
-    originX: 'center',
-    originY: 'center'
-  })
-  canvas.add(text)
-  canvas.setActiveObject(text)
-  updateObjectBorder(text)
-  canvas.renderAll()
-  hasDesign.value = true
-}
-
-const addSampleLogo = async () => {
-  try {
-    const fabricInstance = await ensureFabric()
-    
-    // Create individual logo elements instead of a group
-    
-    // Create a circle
-    const circle = new fabricInstance.Circle({
-      left: canvas.width / 2,
-      top: canvas.height / 2,
-      radius: 30,
-      fill: '#D8127D',
-      stroke: '#0a3a47',
-      strokeWidth: 2,
-      originX: 'center',
-      originY: 'center'
-    })
-
-    // Create text
-    const text = new fabricInstance.Text('LOGO', {
-      left: canvas.width / 2,
-      top: canvas.height / 2,
-      fontSize: 12,
-      fill: 'white',
-      fontFamily: 'Arial',
-      fontWeight: 'bold',
-      originX: 'center',
-      originY: 'center'
-    })
-
-    canvas.add(circle)
-    canvas.add(text)
-    
-    // Select the circle as the active object
-    canvas.setActiveObject(circle)
-    updateObjectBorder(circle)
-    canvas.renderAll()
-    hasDesign.value = true
-    
-    console.log('Sample logo added successfully')
-  } catch (error) {
-    console.error('Error adding sample logo:', error)
-  }
-}
-
-// Color handling
-const changeShirtColor = (index) => {
-  selectedColor.value = index
-  canvas.backgroundColor = colors[index].hex
-  canvas.renderAll()
-}
-
-const changeTextColor = (color) => {
-  if (selectedObject.value && selectedObject.value.type === 'text') {
-    selectedObject.value.fill = color
-    const activeObject = canvas.getActiveObject()
-    if (activeObject) {
-      activeObject.set('fill', color)
-      canvas.renderAll()
-    }
-  }
-}
-
-// Object selection
-const onSelection = (e) => {
-  const activeObject = canvas.getActiveObject()
-  if (activeObject) {
+// Selection
+const onSelection = () => {
+  const active = canvas.getActiveObject()
+  if (active) {
     selectedObject.value = {
-      type: activeObject.type,
-      text: activeObject.text || '',
-      fontSize: activeObject.fontSize || 24,
-      fill: activeObject.fill || '#000000',
-      opacity: activeObject.opacity || 1
+      type: active.type,
+      text: active.text || '',
+      fontSize: active.fontSize || 24,
+      fill: active.fill || '#000000',
+      opacity: active.opacity || 1
     }
+    rememberTransform(active)
   }
 }
+const onSelectionCleared = () => { selectedObject.value = null }
 
-const onSelectionCleared = () => {
-  selectedObject.value = null
-}
-
-const onObjectModified = () => {
-  // Update selectedObject when object is modified
-  const activeObject = canvas.getActiveObject()
-  if (activeObject && selectedObject.value) {
-    selectedObject.value.text = activeObject.text || selectedObject.value.text
-    selectedObject.value.fontSize = activeObject.fontSize || selectedObject.value.fontSize
-    selectedObject.value.fill = activeObject.fill || selectedObject.value.fill
-    selectedObject.value.opacity = activeObject.opacity || selectedObject.value.opacity
-  }
-  // Check placement after modification
-  if (activeObject) {
-    updateObjectBorder(activeObject)
-  }
-}
-
-const onObjectAdded = () => {
-  hasDesign.value = true
-  // Check placement for newly added objects
-  const activeObject = canvas.getActiveObject()
-  if (activeObject) {
-    updateObjectBorder(activeObject)
-  }
-}
-
-const onObjectRemoved = () => {
-  hasDesign.value = canvas.getObjects().length > 1 // More than just the shirt outline
-  // Clear warning if no objects left
-  if (canvas.getObjects().length <= 1) {
-    showWarning.value = false
-  }
-}
-
-// Update functions
+// Update text/image
 const updateText = () => {
-  const activeObject = canvas.getActiveObject()
-  if (activeObject && activeObject.type === 'text' && selectedObject.value) {
-    activeObject.set({
+  const active = canvas.getActiveObject()
+  if (active && active.type === 'text' && selectedObject.value) {
+    active.set({
       text: selectedObject.value.text,
       fontSize: parseInt(selectedObject.value.fontSize),
       fill: selectedObject.value.fill
     })
-    canvas.renderAll()
+    canvas.requestRenderAll()
   }
 }
-
 const updateImage = () => {
-  const activeObject = canvas.getActiveObject()
-  if (activeObject && activeObject.type === 'image' && selectedObject.value) {
-    activeObject.set('opacity', parseFloat(selectedObject.value.opacity))
-    canvas.renderAll()
+  const active = canvas.getActiveObject()
+  if (active && active.type === 'image' && selectedObject.value) {
+    active.set('opacity', parseFloat(selectedObject.value.opacity))
+    canvas.requestRenderAll()
   }
 }
 
-// Layer controls
+// Layers
 const bringToFront = () => {
-  const activeObject = canvas.getActiveObject()
-  if (activeObject) {
-    try {
-      // Simple approach: remove and add back to bring to front
-      canvas.remove(activeObject)
-      canvas.add(activeObject)
-      canvas.renderAll()
-    } catch (error) {
-      console.error('Error bringing to front:', error)
-    }
-  }
+  const active = canvas.getActiveObject()
+  if (active) { canvas.bringToFront(active); canvas.setActiveObject(active); canvas.requestRenderAll() }
 }
-
 const sendToBack = () => {
-  const activeObject = canvas.getActiveObject()
-  if (activeObject) {
-    try {
-      // Simple approach: remove and insert at beginning
-      canvas.remove(activeObject)
-      canvas.insertAt(activeObject, 0)
-      canvas.renderAll()
-    } catch (error) {
-      console.error('Error sending to back:', error)
-    }
+  const active = canvas.getActiveObject()
+  if (active) {
+    canvas.sendToBack(active)
+    canvas.setActiveObject(active)
+    canvas.requestRenderAll()
   }
 }
-
 const deleteObject = () => {
-  const activeObject = canvas.getActiveObject()
-  if (activeObject) {
-    canvas.remove(activeObject)
+  const active = canvas.getActiveObject()
+  if (active) {
+    canvas.remove(active)
     selectedObject.value = null
-    canvas.renderAll()
+    hasDesign.value = canvas.getObjects().some(o => o.name === 'DESIGN_OBJECT')
+    canvas.requestRenderAll()
   }
 }
 
-// Zoom controls
-const zoomIn = () => {
-  const zoom = canvas.getZoom()
-  canvas.setZoom(Math.min(zoom * 1.1, 3))
-  canvas.renderAll()
-}
+// Zoom & View
+const zoomIn = () => { const z = canvas.getZoom(); canvas.setZoom(Math.min(z * 1.1, 3)); canvas.requestRenderAll() }
+const zoomOut = () => { const z = canvas.getZoom(); canvas.setZoom(Math.max(z / 1.1, 0.5)); canvas.requestRenderAll() }
+const resetView = () => { canvas.setZoom(1); canvas.setViewportTransform([1,0,0,1,0,0]); canvas.requestRenderAll() }
 
-const zoomOut = () => {
-  const zoom = canvas.getZoom()
-  canvas.setZoom(Math.max(zoom / 1.1, 0.5))
-  canvas.renderAll()
-}
-
-const resetView = () => {
-  canvas.setZoom(1)
-  canvas.setViewportTransform([1, 0, 0, 1, 0, 0])
-  canvas.renderAll()
-}
-
-// Export function
+// Export
 const exportDesign = () => {
-  if (!canvas) {
-    console.warn('Canvas not initialized')
-    return
-  }
+  // Ensure everything is visible for export
+  const oldClip = canvas.clipPath
+  canvas.clipPath = null
+  canvas.discardActiveObject()
+  // Hide polygon UI
+  const toHide = []
+  if (polygonOverlay) { toHide.push({ o: polygonOverlay, v: polygonOverlay.visible }); polygonOverlay.visible = false }
+  if (polylineOverlay) { toHide.push({ o: polylineOverlay, v: polylineOverlay.visible }); polylineOverlay.visible = false }
+  pointMarkers.forEach(p => { toHide.push({ o: p, v: p.visible }); p.visible = false })
+  if (Array.isArray(polygonControlPoints)) polygonControlPoints.forEach(cp => { toHide.push({ o: cp, v: cp.visible }); cp.visible = false })
 
-  const canvasElement = canvasRef.value
-  const scale = canvas.getZoom()
-  const vpt = canvas.viewportTransform
-
-  const options = {
-    scale: scale,
-    left: vpt[4],
-    top: vpt[5],
-    width: canvasElement.offsetWidth,
-    height: canvasElement.offsetHeight,
-    backgroundColor: canvas.backgroundColor,
-    quality: 0.9,
-    format: 'png'
-  }
-
-  canvas.toDataURL(options, (dataUrl) => {
-    const link = document.createElement('a')
-    link.href = dataUrl
-    link.download = 'design_export.png'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  })
+  canvas.requestRenderAll()
+  // Export full canvas (shirt + design objects), without polygon UI
+  const dataUrl = canvas.toDataURL({ format: 'png', quality: 1 })
+  const link = document.createElement('a')
+  link.href = dataUrl
+  link.download = 'design_export.png'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  // Restore clip if needed
+  canvas.clipPath = oldClip
+  // Restore polygon UI visibility
+  toHide.forEach(({ o, v }) => { o.visible = v })
+  canvas.requestRenderAll()
 }
 
-// Mouse events for panning
-let isDragging = false
-let lastPosX = 0
-let lastPosY = 0
-
-const onMouseDown = (e) => {
+// Panning & Zoom via Fabric events
+let isDragging = false, lastPosX = 0, lastPosY = 0
+canvas?.on?.('mouse:down', (opt) => {
+  const e = opt.e
   if (e.altKey) {
     isDragging = true
     lastPosX = e.clientX
     lastPosY = e.clientY
     canvas.defaultCursor = 'grabbing'
   }
-}
+})
+canvas?.on?.('mouse:move', (opt) => {
+  if (!isDragging) return
+  const e = opt.e
+  const dx = e.clientX - lastPosX
+  const dy = e.clientY - lastPosY
+  const vpt = canvas.viewportTransform
+  vpt[4] += dx; vpt[5] += dy
+  canvas.setViewportTransform(vpt)
+  lastPosX = e.clientX; lastPosY = e.clientY
+})
+canvas?.on?.('mouse:up', () => { isDragging = false; canvas.defaultCursor = 'default' })
+canvas?.on?.('mouse:wheel', (opt) => {
+  const e = opt.e
+  if (!e.ctrlKey) return
+  e.preventDefault()
+  const z = canvas.getZoom()
+  const nz = z * (1 - e.deltaY / 1000)
+  canvas.setZoom(Math.min(Math.max(nz, 0.5), 3))
+  canvas.requestRenderAll()
+})
 
-const onMouseMove = (e) => {
-  if (isDragging) {
-    const deltaX = e.clientX - lastPosX
-    const deltaY = e.clientY - lastPosY
-    const vpt = canvas.viewportTransform
-    vpt[4] += deltaX
-    vpt[5] += deltaY
-    canvas.setViewportTransform(vpt)
-    lastPosX = e.clientX
-    lastPosY = e.clientY
-  }
-}
-
-const onMouseUp = () => {
-  isDragging = false
-  canvas.defaultCursor = 'default'
-}
-
-const onWheel = (e) => {
-  if (e.ctrlKey) {
-    e.preventDefault()
-    const delta = e.deltaY
-    const zoom = canvas.getZoom()
-    const newZoom = zoom * (1 - delta / 1000)
-    canvas.setZoom(Math.min(Math.max(newZoom, 0.5), 3))
-    canvas.renderAll()
-  }
-}
-
-// Keyboard shortcuts
+// Keyboard
 const onKeyDown = (e) => {
   if (!canvas) return
-  
-  if (e.key === 'z' && e.ctrlKey) {
-    e.preventDefault()
-    // Note: fabric.js doesn't have built-in undo/redo, but we can implement it
-    console.log('Undo requested')
-  } else if (e.key === 'y' && e.ctrlKey) {
-    e.preventDefault()
-    console.log('Redo requested')
-  } else if (e.key === 'Delete' || e.key === 'Backspace') {
-    e.preventDefault()
-    deleteObject()
+
+  // Admin: Polygon steuern
+  if (isAdminMode.value) {
+    if (e.key === 'Enter' && isDrawingPolygon.value) {
+      e.preventDefault()
+      // finish polygon: switch to edit mode
+      isDrawingPolygon.value = false
+      isEditingArea.value = true
+      canvas.selection = true
+      canvas.skipTargetFind = false
+      canvas.defaultCursor = 'default'
+      removePolylineOverlay()
+      drawPolygonOverlay()
+      renderPolygonControlPoints()
+      return
+    }
+    if (e.key === 'Escape' && (isDrawingPolygon.value || isEditingArea.value)) {
+      e.preventDefault()
+      isDrawingPolygon.value = false
+      isEditingArea.value = false
+      clearPolygonControlPoints()
+      removePolylineOverlay()
+      removePointMarkers()
+      return
+    }
+  }
+
+  if ((e.key === 'Delete' || e.key === 'Backspace')) {
+    const active = canvas.getActiveObject()
+    if (active) { e.preventDefault(); deleteObject() }
   }
 }
 
-// Test function to verify canvas is working
+// Test
 const testCanvas = () => {
-  if (!canvas) {
-    console.error('Canvas not initialized')
+  const rect = new fabric.Rect({ left: 100, top: 100, width: 100, height: 100, fill: 'red', stroke: 'black', strokeWidth: 2 })
+  addObjectToDesignLayer(rect)
+}
+
+// Simplified polygon controls
+const polygonButtonTitle = computed(() => {
+  if (isDrawingPolygon.value) return 'Punkt setzen (Enter fertig)'
+  if (isEditingArea.value) return 'Polygon bearbeiten (Punkte ziehen)'
+  return 'Polygon-Modus starten'
+})
+const polygonButtonHelp = computed(() => {
+  if (isDrawingPolygon.value) return 'Klicken zum Punkt setzen – Enter: fertig'
+  if (isEditingArea.value) return 'Ziehe Punkte, Esc: beenden'
+  return 'Erstelle eine Fläche durch Klicken'
+})
+function handlePolygonButton() {
+  if (!isAdminMode.value) {
+    isAdminMode.value = true
+  }
+  if (!isDrawingPolygon.value && !isEditingArea.value) {
+    // start draw mode
+    isDrawingPolygon.value = true
+    canvas.discardActiveObject()
+    canvas.selection = false
+    canvas.skipTargetFind = true
+    canvas.defaultCursor = 'crosshair'
+    customPolygon.value = []
+    removePolylineOverlay()
+    removePointMarkers()
+    removePolygonOverlay()
+    drawPolylineOverlay()
     return
   }
-  
-  try {
-    console.log('Testing canvas with a simple rectangle')
-    const testRect = new fabric.Rect({
-      left: 100,
-      top: 100,
-      width: 100,
-      height: 100,
-      fill: 'red',
-      stroke: 'black',
-      strokeWidth: 2
-    })
-    
-    canvas.add(testRect)
-    canvas.renderAll()
-    console.log('Test rectangle added successfully')
-    console.log('Canvas objects count:', canvas.getObjects().length)
-  } catch (error) {
-    console.error('Error in testCanvas:', error)
+  if (isDrawingPolygon.value) {
+    // finish drawing -> edit mode
+    isDrawingPolygon.value = false
+    isEditingArea.value = true
+    canvas.selection = true
+    canvas.skipTargetFind = false
+    canvas.defaultCursor = 'default'
+    removePolylineOverlay()
+    drawPolygonOverlay()
+    renderPolygonControlPoints()
+    return
+  }
+  if (isEditingArea.value) {
+    // leave edit mode
+    isEditingArea.value = false
+    clearPolygonControlPoints()
+    removePolylineOverlay()
+    removePointMarkers()
   }
 }
 
-// Toggle placement guides
-const togglePlacementGuides = () => {
-  showPlacementGuides.value = !showPlacementGuides.value
-  
-  if (showPlacementGuides.value) {
-    // Re-add guides
-    addShirtOutline()
+function toggleEditPolygon() {
+  if (!customPolygon.value.length) return
+  isEditingArea.value = !isEditingArea.value
+  if (isEditingArea.value) {
+    renderPolygonControlPoints()
   } else {
-    // Remove only the guide objects (not user designs)
-    const objects = canvas.getObjects()
-    const guidesToRemove = objects.filter(obj => 
-      obj.selectable === false && 
-      obj.evented === false && 
-      (obj.fill === 'rgba(212, 18, 125, 0.1)' || 
-       obj.fill === 'rgba(255, 122, 0, 0.1)' || 
-       obj.fill === 'rgba(10, 58, 71, 0.1)' ||
-       obj.text === 'Front Design Area' ||
-       obj.text === 'Back Design Area' ||
-       obj.text === 'Sleeve Areas')
-    )
-    
-    guidesToRemove.forEach(guide => {
-      canvas.remove(guide)
-    })
-    
-    // Clear warnings and red borders when guides are hidden
-    showWarning.value = false
-    objects.forEach(obj => {
-      if (obj.stroke === '#e53e3e') {
-        obj.set('stroke', null)
-        obj.set('strokeWidth', 0)
-      }
-    })
-    
-    canvas.renderAll()
+    clearPolygonControlPoints()
   }
 }
 
-// Toggle polygon drawing mode
-const togglePolygonMode = () => {
-  isDrawingPolygon.value = !isDrawingPolygon.value
-  if (!isDrawingPolygon.value) {
-    customPolygon.value = []
-    removePolygonOverlay()
+// ---------- Polygon / Clip ----------
+const toggleAdminMode = () => {
+  isAdminMode.value = !isAdminMode.value
+  if (!isAdminMode.value) {
+    isEditingArea.value = false
+    isDrawingPolygon.value = false
+    clearPolygonControlPoints()
   }
 }
 
-// Finish polygon
-const finishPolygon = () => {
-  isDrawingPolygon.value = false
-  drawPolygonOverlay()
+const toggleAreaEditing = () => {}
+
+const togglePolygonMode = () => {}
+
+const finishPolygon = () => {}
+
+// Overlays & Marker
+function drawPointMarkers() {
+  removePointMarkers()
+  for (let i = 0; i < customPolygon.value.length; i++) {
+    const pt = customPolygon.value[i]
+    const dot = new fabric.Circle({
+      left: pt.x, top: pt.y, originX: 'center', originY: 'center',
+      radius: 3.5, fill: '#0a3a47', stroke: '#ffffff', strokeWidth: 1,
+      selectable: false, evented: false, name: 'POLY_DOT'
+    })
+    pointMarkers.push(dot)
+    canvas.add(dot)
+  }
+  pointMarkers.forEach(bringToTop)
+  canvas.requestRenderAll()
+}
+function removePointMarkers() {
+  if (!pointMarkers.length) return
+  pointMarkers.forEach(d => canvas.remove(d))
+  pointMarkers.length = 0
 }
 
-// Canvas click handler for polygon drawing
-const onCanvasClick = (e) => {
-  if (!isDrawingPolygon.value) return
-  const rect = canvasRef.value.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const y = e.clientY - rect.top
-  customPolygon.value.push({ x, y })
-  drawPolygonOverlay()
+function drawPolylineOverlay() {
+  const pts = customPolygon.value
+  if (pts.length < 2) { removePolylineOverlay(); return }
+  const polyPts = pts.map(p => ({ x: p.x, y: p.y }))
+  if (polylineOverlay) {
+    polylineOverlay.set({ points: polyPts })
+  } else {
+    polylineOverlay = new fabric.Polyline(polyPts, {
+      fill: 'transparent',
+      stroke: '#0a3a47',
+      strokeWidth: 2,
+      selectable: false,
+      evented: false,
+      name: 'PLACEMENT_POLYLINE',
+      absolutePositioned: true,
+    })
+    canvas.add(polylineOverlay)
+  }
+  bringToTop(polylineOverlay)
+  bringPolygonUIToFront()
+  canvas.requestRenderAll()
+}
+function removePolylineOverlay() {
+  if (polylineOverlay) {
+    canvas.remove(polylineOverlay)
+    polylineOverlay = null
+    canvas.requestRenderAll()
+  }
 }
 
-// Draw polygon overlay
-const drawPolygonOverlay = () => {
-  removePolygonOverlay()
-  if (customPolygon.value.length < 2) return
-  const points = customPolygon.value.map(pt => ({ x: pt.x, y: pt.y }))
-  polygonOverlay = new fabric.Polygon(points, {
-    fill: 'rgba(0, 150, 255, 0.1)',
-    stroke: '#0a3a47',
-    strokeWidth: 2,
-    selectable: false,
-    evented: false
-  })
-  canvas.add(polygonOverlay)
-  canvas.bringToFront(polygonOverlay)
-  // Bring user objects to front
-  canvas.getObjects().forEach(obj => {
-    if (obj.selectable !== false || obj.evented !== false) {
-      canvas.bringToFront(obj)
-    }
-  })
-  canvas.renderAll()
-}
-
-const removePolygonOverlay = () => {
+function drawPolygonOverlay() {
+  const pts = customPolygon.value
+  if (pts.length < 3) { removePolygonOverlay(); return }
+  const points = pts.map(pt => ({ x: pt.x, y: pt.y }))
   if (polygonOverlay) {
-    canvas.remove(polygonOverlay)
-    polygonOverlay = null
-    canvas.renderAll()
+    polygonOverlay.set({ points })
+  } else {
+    polygonOverlay = new fabric.Polygon(points, {
+      fill: 'rgba(0, 150, 255, 0.1)',
+      stroke: '#0a3a47',
+      strokeWidth: 2,
+      strokeLineJoin: 'round',
+      strokeMiterLimit: 2,
+      selectable: false,
+      evented: false,
+      name: 'PLACEMENT_OVERLAY',
+      absolutePositioned: true,
+    })
+    canvas.add(polygonOverlay)
   }
+  bringToTop(polygonOverlay)
+  bringPolygonUIToFront()
+  canvas.requestRenderAll()
+}
+function removePolygonOverlay() {
+  if (polygonOverlay) { canvas.remove(polygonOverlay); polygonOverlay = null; canvas.requestRenderAll() }
+  clearPolygonControlPoints()
 }
 
-// Point-in-polygon algorithm
+function renderPolygonControlPoints() {
+  clearPolygonControlPoints()
+  if (customPolygon.value.length < 3) return
+  polygonControlPoints = customPolygon.value.map((pt, index) => {
+    const cp = new fabric.Circle({
+      left: pt.x, top: pt.y, originX: 'center', originY: 'center',
+      radius: 6, fill: '#0a3a47', stroke: '#ffffff', strokeWidth: 2,
+      hasControls: false, hasBorders: false, name: 'POLY_CP',
+      selectable: true, hoverCursor: 'pointer',
+      perPixelTargetFind: false
+    })
+    cp._polyIndex = index
+    cp.on('moving', () => {
+      customPolygon.value[cp._polyIndex] = { x: cp.left, y: cp.top }
+      drawPointMarkers()
+      drawPolylineOverlay()
+      drawPolygonOverlay()
+      applyClipPathFromCustomPolygon()
+    })
+    canvas.add(cp)
+    return cp
+  })
+  polygonControlPoints.forEach(bringToTop)
+  bringPolygonUIToFront()
+  canvas.requestRenderAll()
+}
+function clearPolygonControlPoints() {
+  if (!polygonControlPoints.length) return
+  polygonControlPoints.forEach(cp => canvas.remove(cp))
+  polygonControlPoints = []
+  canvas.requestRenderAll()
+}
+
+// ClipPath anwenden
+function applyClipPathFromCustomPolygon() {
+  // Temporarily disable visual clipping to avoid cutting off images
+  canvas.clipPath = null
+  clipPolygon = null
+  canvas.requestRenderAll()
+}
+
+// Persistenz
+function normalizePoints(points) {
+  const w = canvas.width, h = canvas.height
+  return points.map(p => ({ x: p.x / w, y: p.y / h }))
+}
+function denormalizePoints(points) {
+  const w = canvas.width, h = canvas.height
+  return points.map(p => ({ x: p.x * w, y: p.y * h }))
+}
+async function savePolygonToStore(productId, normalizedPoints) {
+  const payload = { points: normalizedPoints, updatedAt: new Date().toISOString() }
+  try {
+    const res = await fetch(`/api/products/${encodeURIComponent(productId)}/placement-area`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  } catch {
+    localStorage.setItem(`placementArea:${productId}`, JSON.stringify(payload))
+  }
+}
+async function loadPolygonFromStore(productId) {
+  try {
+    const res = await fetch(`/api/products/${encodeURIComponent(productId)}/placement-area`)
+    if (res.ok) return await res.json()
+  } catch {}
+  const raw = localStorage.getItem(`placementArea:${productId}`)
+  return raw ? JSON.parse(raw) : null
+}
+
+async function savePlacementArea() {
+  if (customPolygon.value.length < 3) { alert('Bitte mindestens 3 Punkte setzen.'); return }
+  const normalized = normalizePoints(customPolygon.value)
+  await savePolygonToStore(String(props.productId), normalized)
+  showWarning.value = false; warningMessage.value = ''
+  applyClipPathFromCustomPolygon()
+}
+async function loadPlacementArea() {
+  const data = await loadPolygonFromStore(String(props.productId))
+  if (data && Array.isArray(data.points) && data.points.length >= 3) {
+    customPolygon.value = denormalizePoints(data.points)
+    drawPointMarkers()
+    drawPolylineOverlay()
+    drawPolygonOverlay()
+    applyClipPathFromCustomPolygon()
+  }
+}
+function clearPlacementArea() {
+  customPolygon.value = []
+  removePolylineOverlay()
+  removePointMarkers()
+  removePolygonOverlay()
+  applyClipPathFromCustomPolygon()
+}
+
+// ---------- Placement-Validation ----------
 function pointInPolygon(x, y, polygon) {
   let inside = false
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     const xi = polygon[i].x, yi = polygon[i].y
     const xj = polygon[j].x, yj = polygon[j].y
-    const intersect = ((yi > y) !== (yj > y)) &&
-      (x < (xj - xi) * (y - yi) / (yj - yi + 0.00001) + xi)
+    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-6) + xi)
     if (intersect) inside = !inside
   }
   return inside
 }
-
-// Update checkPlacement to use polygon if defined
-const checkPlacement = (object) => {
-  if (!object || !showPlacementGuides.value || typeof maskCtx === 'undefined' || !maskCtx) return true;
-  // If custom polygon exists, use it
-  if (customPolygon.value.length >= 3) {
-    const objBounds = object.getBoundingRect()
-    const points = [
-      [objBounds.left, objBounds.top],
-      [objBounds.left + objBounds.width, objBounds.top],
-      [objBounds.left, objBounds.top + objBounds.height],
-      [objBounds.left + objBounds.width, objBounds.top + objBounds.height],
-      [objBounds.left + objBounds.width / 2, objBounds.top + objBounds.height / 2]
-    ]
-    for (const [x, y] of points) {
-      if (!pointInPolygon(x, y, customPolygon.value)) {
-        return false
-      }
-    }
-    return true
-  }
-  // Get object bounds
-  const objBounds = object.getBoundingRect()
-  // Check corners and center
-  const points = [
-    [objBounds.left, objBounds.top],
-    [objBounds.left + objBounds.width, objBounds.top],
-    [objBounds.left, objBounds.top + objBounds.height],
-    [objBounds.left + objBounds.width, objBounds.top + objBounds.height],
-    [objBounds.left + objBounds.width / 2, objBounds.top + objBounds.height / 2]
+function objectFullyInsidePolygon(object, polygonPoints) {
+  object.setCoords()
+  const br = object.getBoundingRect(true, true)
+  const pts = [
+    { x: br.left, y: br.top },
+    { x: br.left + br.width, y: br.top },
+    { x: br.left, y: br.top + br.height },
+    { x: br.left + br.width, y: br.top + br.height }
   ]
-  for (const [x, y] of points) {
-    const pixel = maskCtx.getImageData(Math.round(x), Math.round(y), 1, 1).data
-    if (pixel[3] < 128) {
-      return false // Transparent pixel
-    }
-  }
-  return true
+  return pts.every(p => pointInPolygon(p.x, p.y, polygonPoints))
 }
+function rememberTransform(obj) {
+  lastValidTransform.set(obj, {
+    left: obj.left, top: obj.top, scaleX: obj.scaleX, scaleY: obj.scaleY, angle: obj.angle || 0
+  })
+}
+function validateAndMaybeRevert(obj) {
+  if (!obj) return
+  if (obj.name !== 'DESIGN_OBJECT') return
 
-// Update object border based on placement
-const updateObjectBorder = (object) => {
+  const hasPoly = customPolygon.value.length >= 3
+  if (!hasPoly) {
+    updateObjectBorder(obj)
+    rememberTransform(obj)
+    return
+  }
+
+  const inside = objectFullyInsidePolygon(obj, customPolygon.value)
+  if (inside) {
+    updateObjectBorder(obj)
+    rememberTransform(obj)
+  } else {
+    const last = lastValidTransform.get(obj)
+    if (last) { obj.set(last); obj.setCoords() }
+    obj.set({ stroke: '#e53e3e', strokeWidth: 3 })
+    showWarning.value = true
+    warningMessage.value = 'Bitte innerhalb der Fläche platzieren.'
+    canvas.requestRenderAll()
+  }
+}
+function updateObjectBorder(object) {
   if (!object) return
-  
-  const isInSafeArea = checkPlacement(object)
-  
-  if (isInSafeArea) {
-    // Remove red border if it exists
-    object.set('stroke', null)
-    object.set('strokeWidth', 0)
+  let ok = true
+  if (customPolygon.value.length >= 3) ok = objectFullyInsidePolygon(object, customPolygon.value)
+  if (ok) {
+    object.set('stroke', null); object.set('strokeWidth', 0)
     showWarning.value = false
   } else {
-    // Add red border
-    object.set('stroke', '#e53e3e')
-    object.set('strokeWidth', 3)
-    showWarning.value = true
-    warningMessage.value = 'Bitte platziere deine Inhalte innerhalb des Rahmens'
+    object.set('stroke', '#e53e3e'); object.set('strokeWidth', 3)
+    showWarning.value = true; warningMessage.value = 'Bitte platziere deine Inhalte innerhalb des Rahmens'
   }
-  
-  canvas.renderAll()
+  canvas.requestRenderAll()
 }
 
-// Event listeners for object movement, scaling, rotating
-const onObjectMoving = (e) => {
-  updateObjectBorder(e.target)
-}
-
-const onObjectScaling = (e) => {
-  updateObjectBorder(e.target)
-}
-
-const onObjectRotating = (e) => {
-  updateObjectBorder(e.target)
+// Canvas an Fenstergröße anpassen
+function handleResize() {
+  if (!canvas || !canvasRef.value) return
+  const w = canvasRef.value.offsetWidth
+  const h = 600
+  canvas.setWidth(w)
+  canvas.setHeight(h)
+  canvas.requestRenderAll()
 }
 
 // Lifecycle
 onMounted(async () => {
   await nextTick()
   await initCanvas()
-  
-  // Add resize listener
+  await loadPlacementArea()
   window.addEventListener('resize', handleResize)
-  // Add click event for polygon drawing
-  canvasRef.value.addEventListener('click', onCanvasClick)
 })
-
 onUnmounted(() => {
-  if (canvas) {
-    canvas.dispose()
-  }
+  if (canvas) canvas.dispose()
   window.removeEventListener('resize', handleResize)
-  if (canvasRef.value) canvasRef.value.removeEventListener('click', onCanvasClick)
 })
-
-// Handle canvas resize
-const handleResize = () => {
-  if (canvas && canvasRef.value) {
-    const newWidth = canvasRef.value.offsetWidth
-    canvas.setWidth(newWidth)
-    canvas.renderAll()
-  }
-}
 </script>
 
 <style scoped>
 .btn {
   @apply transition font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 px-4 py-2 rounded-lg;
 }
-
 .btn-secondary {
   @apply transition font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700;
 }
-
-input[type="range"] {
-  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  @apply appearance-none h-4 w-4 rounded-full bg-[#D8127D] cursor-pointer;
-}
-
-input[type="range"]::-moz-range-thumb {
-  @apply h-4 w-4 rounded-full bg-[#D8127D] cursor-pointer border-0;
-}
-</style> 
+input[type="range"] { @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer; }
+input[type="range"]::-webkit-slider-thumb { @apply appearance-none h-4 w-4 rounded-full bg-[#D8127D] cursor-pointer; }
+input[type="range"]::-moz-range-thumb { @apply h-4 w-4 rounded-full bg-[#D8127D] cursor-pointer border-0; }
+</style>
